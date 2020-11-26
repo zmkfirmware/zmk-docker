@@ -53,6 +53,7 @@ RUN \
   && apt-get -y install --no-install-recommends \
   clang-format \
   g++-multilib \
+  gpg \
   gpg-agent \
   libsdl2-dev \
   locales \
@@ -64,6 +65,7 @@ RUN \
   python3-setuptools \
   python3-tk \
   python3-wheel \
+  ssh \
   wget \
   xz-utils \
   && pip3 install \
