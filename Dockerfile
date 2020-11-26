@@ -55,6 +55,7 @@ RUN \
   gpg-agent \
   libsdl2-dev \
   locales \
+  nano \
   nodejs \
   python3 \
   python3-dev \
