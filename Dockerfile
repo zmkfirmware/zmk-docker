@@ -45,8 +45,14 @@ FROM common AS dev-generic
 RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
+  curl \
+  && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
+  && apt-get -y update \
+  && apt-get -y install --no-install-recommends \
   g++-multilib \
+  gpg-agent \
   libsdl2-dev \
+  nodejs \
   python3 \
   python3-dev \
   python3-pip \
@@ -59,7 +65,8 @@ RUN \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-build-test.txt \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-run-test.txt \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && node --version
 
 ENV DEBIAN_FRONTEND=
 
