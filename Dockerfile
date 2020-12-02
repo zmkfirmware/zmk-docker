@@ -42,6 +42,8 @@ RUN \
 
 FROM common AS dev-generic
 
+ENV LC_ALL=C
+
 RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
@@ -52,6 +54,7 @@ RUN \
   g++-multilib \
   gpg-agent \
   libsdl2-dev \
+  locales \
   nodejs \
   python3 \
   python3-dev \
