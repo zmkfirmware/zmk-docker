@@ -1,4 +1,4 @@
-FROM debian:stable-20201117-slim AS common
+FROM debian:stable-20210329-slim AS common
 
 CMD ["/bin/bash"]
 
