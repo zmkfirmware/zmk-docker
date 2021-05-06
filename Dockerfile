@@ -46,7 +46,7 @@ ENV LC_ALL=C
 
 RUN \
   apt-get -y update \
-  && apt-get -y install --no-install-recommends \
+  && apt-get -y -t buster-backports install --no-install-recommends \
   curl \
   && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
   && apt-get -y update \
