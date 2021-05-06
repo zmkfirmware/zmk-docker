@@ -4,7 +4,7 @@ CMD ["/bin/bash"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG REPOSITORY_URL=https://github.com/innovaker/zmk-docker
+ARG REPOSITORY_URL=https://github.com/zmkfirmware/zmk-docker
 LABEL org.opencontainers.image.source ${REPOSITORY_URL}
 
 ARG ZEPHYR_VERSION
