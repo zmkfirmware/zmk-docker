@@ -113,9 +113,11 @@ jobs:
           docker push docker.io/${{ steps.registry-env.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
           docker push docker.io/${{ steps.registry-env.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.versions-tag }}
           docker push docker.io/${{ steps.registry-env.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.latest-tag }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.candidate-tag }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.versions-tag }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.latest-tag }}
+          if [ "${{ steps.registry-env.outputs.ghcr-token-exists }}" = "true" ]; then
+            docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.candidate-tag }}
+            docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.versions-tag }}
+            docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.latest-tag }}
+          fi
   git:
     runs-on: ubuntu-latest
     needs: docker
