@@ -91,9 +91,10 @@ jobs:
             ZEPHYR_VERSION=${{ env.zephyr-version }}
             ARCHITECTURE=${{ matrix.architecture }}
             ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
-            REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }}
           tags: |
             docker.io/${{ steps.registry-env.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: ${{ steps.registry-env.outputs.docker-hub-namespace && format('type=registry,ref=docker.io/{0}/{1},push=false', steps.registry-env.outputs.docker-hub-namespace, steps.vars.outputs.cache-from) || null }}
           cache-to: ${{ fromJSON(steps.registry-env.outputs.docker-hub-token-exists) && format('type=registry,ref=docker.io/{0}/{1},mode=max,push={2}', steps.registry-env.outputs.docker-hub-namespace, steps.vars.outputs.cache-to, matrix.push-cache) || null }}
           push: ${{ fromJSON(steps.registry-env.outputs.docker-hub-token-exists) }}
