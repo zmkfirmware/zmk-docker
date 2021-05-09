@@ -35,7 +35,11 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Prepare variables
         id: vars
+        env:
+            DOCKER_HUB_NAMESPACE: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
         run: |
+          echo ::set-output name=docker-hub-namespace::${DOCKER_HUB_NAMESPACE}
+
           NAME=zmk-${{ matrix.target }}-${{ matrix.architecture }}
           echo ::set-output name=name::${NAME}
 
@@ -74,9 +78,9 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           tags: |
-            docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
-          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ env.cache-repository-name }}:dev
-          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ env.cache-repository-name }}:${{ matrix.target }},mode=max
+            docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
+          cache-from: type=registry,ref=docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ env.cache-repository-name }}:dev
+          cache-to: type=registry,ref=docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ env.cache-repository-name }}:${{ matrix.target }},mode=max
           push: true
       - name: Image digest
         if: ${{ !startsWith(github.ref, 'refs/tags') }}
@@ -84,15 +88,15 @@ jobs:
       - name: Release (pull candidate, tag, push)
         if: ${{ github.ref == steps.vars.outputs.tag-trigger-ref }}
         run: |
-          docker pull docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
-          docker tag docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }} docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.versions-tag }}
-          docker tag docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }} docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.latest-tag }}
-          docker tag docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.candidate-tag }}
-          docker tag docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.versions-tag }}
-          docker tag docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.latest-tag }}
-          docker push docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
-          docker push docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.versions-tag }}
-          docker push docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.latest-tag }}
+          docker pull docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
+          docker tag docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }} docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.versions-tag }}
+          docker tag docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }} docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.latest-tag }}
+          docker tag docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.candidate-tag }}
+          docker tag docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.versions-tag }}
+          docker tag docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }} ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.latest-tag }}
+          docker push docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
+          docker push docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.versions-tag }}
+          docker push docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.latest-tag }}
           docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.candidate-tag }}
           docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.versions-tag }}
           docker push ghcr.io/${{ github.repository_owner }}/${{ steps.vars.outputs.latest-tag }}
