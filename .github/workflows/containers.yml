@@ -20,11 +20,6 @@ jobs:
         target: # ordered from biggest to smallest to take advantage of the registry cache
           - dev
           - build
-        include:
-          - target: dev
-            cache-to: dev
-          - target: build
-            cache-to: build
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
@@ -45,7 +40,7 @@ jobs:
 
           CACHE_NAME=zmk-docker-cache
           CACHE_FROM=${CACHE_NAME}:dev
-          CACHE_TO=${CACHE_NAME}:${{ matrix.cache-to }}
+          CACHE_TO=${CACHE_NAME}:${{ matrix.target }}
           echo ::set-output name=cache-from::${CACHE_FROM}
           echo ::set-output name=cache-to::${CACHE_TO}
 
