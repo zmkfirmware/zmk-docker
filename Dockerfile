@@ -4,9 +4,6 @@ CMD ["/bin/bash"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG REPOSITORY_URL=https://github.com/innovaker/zmk-docker
-LABEL org.opencontainers.image.source ${REPOSITORY_URL}
-
 ARG ZEPHYR_VERSION
 ENV ZEPHYR_VERSION=${ZEPHYR_VERSION}
 RUN \
