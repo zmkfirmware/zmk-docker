@@ -39,11 +39,6 @@ jobs:
           NAME=zmk-${{ matrix.target }}-${{ matrix.architecture }}
           echo ::set-output name=name::${NAME}
 
-          CACHE_FROM=${{ env.cache-repository-name }}:dev
-          CACHE_TO=${{ env.cache-repository-name }}:${{ matrix.target }}
-          echo ::set-output name=cache-from::${CACHE_FROM}
-          echo ::set-output name=cache-to::${CACHE_TO}
-
           CANDIDATE_TAG=${NAME}:${{ github.sha }}
           echo ::set-output name=candidate-tag::${CANDIDATE_TAG}
 
@@ -80,8 +75,8 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
-          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.cache-from }}
-          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.cache-to }},mode=max
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ env.cache-repository-name }}:dev
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ env.cache-repository-name }}:${{ matrix.target }},mode=max
           push: true
       - name: Image digest
         if: ${{ !startsWith(github.ref, 'refs/tags') }}
