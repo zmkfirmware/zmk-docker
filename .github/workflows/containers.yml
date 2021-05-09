@@ -81,7 +81,7 @@ jobs:
       - name: Image digest
         if: ${{ !startsWith(github.ref, 'refs/tags') }}
         run: echo ${{ steps.build-push.outputs.digest }}
-      - name: Tag (pull candidate, tag, push)
+      - name: Release (pull candidate, tag, push)
         if: ${{ github.ref == steps.vars.outputs.tag-trigger-ref }}
         run: |
           docker pull docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
