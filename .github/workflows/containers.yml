@@ -83,7 +83,8 @@ jobs:
             ZEPHYR_VERSION=${{ env.zephyr-version }}
             ARCHITECTURE=${{ matrix.architecture }}
             ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
-            REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.candidate-tag }}
           cache-from: type=registry,ref=docker.io/${{ secrets.DOCKER_HUB_NAMESPACE }}/${{ steps.vars.outputs.cache-from }},push=false
