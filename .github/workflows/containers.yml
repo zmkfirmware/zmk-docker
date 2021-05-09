@@ -3,6 +3,7 @@ name: Containers
 env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
+  cache-repository-name: zmk-docker-cache
 
 on:
   push:
@@ -38,9 +39,8 @@ jobs:
           NAME=zmk-${{ matrix.target }}-${{ matrix.architecture }}
           echo ::set-output name=name::${NAME}
 
-          CACHE_NAME=zmk-docker-cache
-          CACHE_FROM=${CACHE_NAME}:dev
-          CACHE_TO=${CACHE_NAME}:${{ matrix.target }}
+          CACHE_FROM=${{ env.cache-repository-name }}:dev
+          CACHE_TO=${{ env.cache-repository-name }}:${{ matrix.target }}
           echo ::set-output name=cache-from::${CACHE_FROM}
           echo ::set-output name=cache-to::${CACHE_TO}
 
