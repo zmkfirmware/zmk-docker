@@ -116,7 +116,7 @@ jobs:
           TAG_TRIGGER_REF=refs/tags/${{ env.zephyr-version }}-${{ env.zephyr-sdk-version }}
           echo ::set-output name=tag-trigger-ref::${TAG_TRIGGER_REF}
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         if: ${{ github.ref == steps.vars.outputs.tag-trigger-ref }}
       - name: Tag
         if: ${{ github.ref == steps.vars.outputs.tag-trigger-ref }}
