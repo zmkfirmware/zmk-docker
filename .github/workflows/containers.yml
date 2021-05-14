@@ -243,23 +243,30 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: Repository name
-        id: repository
-        run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Release (pull candidate, tag, push)
+        env:
+          DHNS: ${{ env.docker-hub-namespace }}
+          GHCRNS: ${{ env.ghcr-namespace }}
+          TARGET: ${{ matrix.target }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+          CANDIDATE: ${{ needs.tags.outputs.candidate }}
+          VERSIONS: ${{ needs.tags.outputs.versions }}
+          LATEST: ${{ needs.tags.outputs.latest }}
         run: |
-          docker pull docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker tag docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker tag docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker tag docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker tag docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker tag docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker push ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker push ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker push ghcr.io/${{ env.ghcr-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
+          REPOSITORY=zmk-${TARGET}-${ARCHITECTURE}
+          
+          docker pull docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:${VERSIONS}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:${LATEST}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${CANDIDATE}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${VERSIONS}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${LATEST}
+          docker push docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE}
+          docker push docker.io/${DHNS}/${REPOSITORY}:${VERSIONS}
+          docker push docker.io/${DHNS}/${REPOSITORY}:${LATEST}
+          docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${CANDIDATE}
+          docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${VERSIONS}
+          docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${LATEST}
   git-tag:
     needs:
     - tags
