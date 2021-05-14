@@ -16,7 +16,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1 # takes advantage of caching between types
+      max-parallel: 1 # takes advantage of caching between jobs
       matrix:
         architecture:
           - arm
