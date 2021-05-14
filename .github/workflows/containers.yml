@@ -78,12 +78,13 @@ jobs:
           echo ::set-output name=major-minor::${MAJOR_MINOR}
           echo ::set-output name=latest::${LATEST}
           echo ::set-output name=release-trigger::${RELEASE_TRIGGER}
-  docker:
+  candidates:
     needs:
       - namespaces
       - credentials
       - architectures
       - tags
+    if: ${{ !startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1 # takes advantage of caching between jobs
@@ -112,14 +113,11 @@ jobs:
         id: repository
         run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Set up QEMU
-        if: ${{ !startsWith(github.ref, 'refs/tags') }}
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
-        if: ${{ !startsWith(github.ref, 'refs/tags') }}
         uses: docker/setup-buildx-action@v1
       - name: Build and push (candidate)
         id: build-push
-        if: ${{ !startsWith(github.ref, 'refs/tags') }}
         uses: docker/build-push-action@v2
         with:
           target: ${{ matrix.target }}
@@ -135,17 +133,39 @@ jobs:
           cache-from: type=registry,ref=docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ env.cache-repository-name }}:dev
           cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', needs.namespaces.outputs.docker-hub, env.cache-repository-name, 'dev') || null }}
           push: ${{ steps.docker-hub-login.outcome == 'success' }}
+  releases:
+    needs:
+      - namespaces
+      - credentials
+      - architectures
+      - tags
+    if: ${{ github.ref == format('refs/tags/{0}', needs.tags.outputs.release-trigger) }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
+        target:
+          - build
+          - dev
+    steps:
+      - name: Login to GitHub Container Registry
+        id: ghcr-login
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Login to Docker Hub
+        id: docker-hub-login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Repository name
+        id: repository
+        run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Release (pull candidate, tag, push)
-        if: ${{ github.ref == format('refs/tags/{0}', needs.tags.outputs.release-trigger) }}
         run: |
-          if [ "${{ steps.docker-hub-login.outcome }}" != "success" ]; then
-            echo "Docker Hub must be authenticated to perform a release!"
-            exit 1
-          fi
-          if [ "${{ steps.ghcr-login.outcome }}" != "success" ]; then
-            echo "GitHub Container Registry must be authenticated to perform a release!"
-            exit 1
-          fi
           docker pull docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
           docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
           docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
@@ -161,7 +181,7 @@ jobs:
   git-tag:
     needs:
     - tags
-    - docker
+    - releases
     if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
     steps:
