@@ -122,8 +122,8 @@ jobs:
   git-tag:
     needs:
     - docker
-    runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
     steps:
       - name: Prepare variables
         id: vars
