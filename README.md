@@ -8,6 +8,7 @@ Lightweight Docker images for [ZMK][zmk].
 #### Not Tested
 - `arc`
 - `arm64`
+- `mips`
 - `nios2`
 - `riscv64`
 - `sparc`
