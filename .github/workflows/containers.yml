@@ -91,6 +91,7 @@ jobs:
             ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
           tags: |
             docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ steps.vars.outputs.candidate-tag }}
           cache-from: type=registry,ref=docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ env.cache-repository-name }}:dev
