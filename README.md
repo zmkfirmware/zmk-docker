@@ -2,7 +2,23 @@ Lightweight Docker images for [ZMK][zmk].
 
 ### Platforms
 
+#### Tested
 - `arm`
+
+#### Not Tested
+- `arc`
+- `arm64`
+- `nios2`
+- `riscv64`
+- `sparc`
+- `x86_64`
+- `xtensa_intel_apl_adsp`
+- `xtensa_intel_bdw_adsp`
+- `xtensa_intel_byt_adsp`
+- `xtensa_intel_s1000`
+- `xtensa_nxp_imx8m_adsp`
+- `xtensa_nxp_imx_adsp`
+- `xtensa_sample_controller`
 
 ### Images
 
