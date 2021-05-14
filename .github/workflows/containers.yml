@@ -13,13 +13,29 @@ on:
 concurrency: ${{ github.workflow }}
     
 jobs:
+  architectures:
+    runs-on: ubuntu-latest
+    outputs:
+      json: ${{ steps.import.outputs.json }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Import from architectures.yml
+        id: import
+        shell: python
+        run: |
+          import yaml, json
+          with open('architectures.yml', 'r') as file:
+            architectures = yaml.safe_load(file)
+            print('::set-output name=json::' + json.dumps(architectures))
   docker:
+    needs:
+      - architectures
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1 # takes advantage of caching between jobs
-      matrix:
-        architecture:
-          - arm
+      matrix: 
+        architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
         target: # ordered from biggest to smallest to take advantage of the registry cache
           - dev
           - build
