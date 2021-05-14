@@ -94,9 +94,6 @@ jobs:
           cache-from: type=registry,ref=docker.io/${{ steps.vars.outputs.docker-hub-namespace }}/${{ env.cache-repository-name }}:dev
           cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', steps.vars.outputs.docker-hub-namespace, env.cache-repository-name, matrix.target) || null }}
           push: ${{ steps.docker-hub-login.outcome == 'success' }}
-      - name: Image digest
-        if: ${{ !startsWith(github.ref, 'refs/tags') }}
-        run: echo ${{ steps.build-push.outputs.digest }}
       - name: Release (pull candidate, tag, push)
         if: ${{ github.ref == steps.vars.outputs.tag-trigger-ref }}
         run: |
