@@ -17,8 +17,8 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency: ${{ github.workflow }}
-    
+concurrency: ${{ github.ref }}/${{ github.workflow }}
+
 jobs:
   architectures:
     runs-on: ubuntu-latest
