@@ -402,6 +402,8 @@ jobs:
         run: pager --version && [[ $PAGER = "less" ]] && true || false
       - name: Test ssh
         run: ssh -V
+      - name: Test gdb
+        run: gdb --version
       - name: Stop container
         shell: bash
         run: docker stop candidate
