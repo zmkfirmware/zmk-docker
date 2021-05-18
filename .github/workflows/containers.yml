@@ -396,6 +396,8 @@ jobs:
       - run: sleep 5
       - name: Test docs wget (webpack)
         run: wget http://localhost:3000
+      - name: Test less
+        run: less --version
       - name: Test ssh
         run: ssh -V
       - name: Stop container
