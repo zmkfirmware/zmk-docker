@@ -49,6 +49,7 @@ RUN \
   && apt-get -y install --no-install-recommends \
   clang-format \
   g++-multilib \
+  gdb \
   gpg \
   gpg-agent \
   libsdl2-dev \

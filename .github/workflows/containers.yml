@@ -398,6 +398,8 @@ jobs:
         run: wget http://localhost:3000
       - name: Test ssh
         run: ssh -V
+      - name: Test gdb
+        run: gdb --version
       - name: Stop container
         shell: bash
         run: docker stop candidate
