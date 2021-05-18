@@ -23,11 +23,11 @@ jobs:
     steps:
       - name: Docker Hub
         id: docker-hub
-        run: if [ ${{ secrets.DOCKER_HUB_USERNAME == null || secrets.DOCKER_HUB_TOKEN == null }} = true ]; then exit 1; fi
+        run: if [ ${{ secrets.DOCKER_HUB_USERNAME == null || secrets.DOCKER_HUB_TOKEN == null }} = true ]; then false; fi
         continue-on-error: true
       - name: GitHub Container Registry
         id: ghcr
-        run: if [ ${{ secrets.GHCR_USERNAME == null || secrets.GHCR_TOKEN == null }} = true ]; then exit 1; fi
+        run: if [ ${{ secrets.GHCR_USERNAME == null || secrets.GHCR_TOKEN == null }} = true ]; then false; fi
         continue-on-error: true
   architectures:
     runs-on: ubuntu-latest
