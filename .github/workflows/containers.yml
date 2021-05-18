@@ -190,6 +190,7 @@ jobs:
       run:
         shell: /usr/bin/docker exec candidate /bin/bash {0}
     strategy:
+      fail-fast: false
       matrix: 
         architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
         include:
