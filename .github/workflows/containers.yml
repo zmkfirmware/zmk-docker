@@ -13,13 +13,6 @@ on:
 concurrency: ${{ github.workflow }}
     
 jobs:
-  namespaces:
-    runs-on: ubuntu-latest
-    outputs:
-      docker-hub: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
-      ghcr: ${{ github.repository_owner }}
-    steps:
-      - run: true
   credentials:
     runs-on: ubuntu-latest
     outputs:
@@ -80,7 +73,6 @@ jobs:
           echo ::set-output name=release-trigger::${RELEASE_TRIGGER}
   candidates:
     needs:
-      - namespaces
       - credentials
       - architectures
       - tags
@@ -109,6 +101,14 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
+      - name: Define namespaces
+        id: namespaces
+        env:
+          DOCKER_HUB: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
+          GHCR: ${{ github.repository_owner }}
+        run: |
+          echo ::set-output name=docker-hub::${DOCKER_HUB}
+          echo ::set-output name=ghcr::${GHCR}
       - name: Define repository
         id: repository
         run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
@@ -129,13 +129,12 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
-            docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          cache-from: type=registry,ref=docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ env.cache-repository-name }}:dev
-          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', needs.namespaces.outputs.docker-hub, env.cache-repository-name, 'dev') || null }}
+            docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          cache-from: type=registry,ref=docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ env.cache-repository-name }}:dev
+          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', steps.namespaces.outputs.docker-hub, env.cache-repository-name, 'dev') || null }}
           push: ${{ steps.docker-hub-login.outcome == 'success' }}
   releases:
     needs:
-      - namespaces
       - credentials
       - architectures
       - tags
@@ -161,23 +160,31 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Define namespaces
+        id: namespaces
+        env:
+          DOCKER_HUB: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
+          GHCR: ${{ github.repository_owner }}
+        run: |
+          echo ::set-output name=docker-hub::${DOCKER_HUB}
+          echo ::set-output name=ghcr::${GHCR}
       - name: Repository name
         id: repository
         run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Release (pull candidate, tag, push)
         run: |
-          docker pull docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker tag docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker push docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker push docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker push docker.io/${{ needs.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
-          docker push ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          docker push ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
-          docker push ghcr.io/${{ needs.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
+          docker pull docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          docker tag docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
+          docker tag docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
+          docker tag docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          docker tag docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
+          docker tag docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }} ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
+          docker push docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          docker push docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
+          docker push docker.io/${{ steps.namespaces.outputs.docker-hub }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
+          docker push ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          docker push ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.versions }}
+          docker push ghcr.io/${{ steps.namespaces.outputs.ghcr }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.latest }}
   git-tag:
     needs:
     - tags
