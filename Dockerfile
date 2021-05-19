@@ -39,6 +39,7 @@ RUN \
 FROM common AS dev-generic
 
 ENV LC_ALL=C
+ENV PAGER=less
 
 RUN \
   apt-get -y update \
