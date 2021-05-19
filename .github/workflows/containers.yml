@@ -128,8 +128,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
             docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:${{ needs.tags.outputs.branch }}-dev
-          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2}-{3},mode=max', env.docker-hub-namespace, env.cache-repository-name, needs.tags.outputs.branch, 'dev') || null }}
+          cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:${{ needs.tags.outputs.branch }}
+          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', env.docker-hub-namespace, env.cache-repository-name, needs.tags.outputs.branch) || null }}
           load: true
       - name: Create and run container from candidate image
         shell: bash
