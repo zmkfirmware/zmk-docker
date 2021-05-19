@@ -3,11 +3,14 @@ name: Containers
 env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
+  run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
   cache-repository-name: zmk-docker-cache
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
   ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
   docker-hub-namespace: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
   ghcr-namespace: ${{ github.repository_owner }}
+  zmk-repository: ${{ secrets.ZMK_REPOSITORY || 'zmkfirmware/zmk' }}
+  zmk-ref: ${{ secrets.ZMK_REF || 'main' }}
 
 on:
   push:
@@ -67,6 +70,11 @@ jobs:
       - tags
     if: ${{ !startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
+    env:
+      docker-args: --rm --workdir /github/workspace -v /var/run/docker.sock:/var/run/docker.sock -v /home/runner/work/_temp:/home/runner/work/_temp -v /home/runner/work/_temp/_github_home:/github/home -v /home/runner/work/_temp/_github_workflow:/github/workflow -v /home/runner/work/_temp/_runner_file_commands:/github/file_commands -v ${{ github.workspace }}:/github/workspace
+    defaults:
+      run:
+        shell: /usr/bin/docker exec candidate /bin/bash {0}
     strategy:
       max-parallel: 1 # takes advantage of caching between jobs
       matrix: 
@@ -74,6 +82,10 @@ jobs:
         target: # ordered from biggest to smallest to take advantage of the registry cache
           - dev
           - build
+        include:
+          - architecture: arm
+            board: nice_nano
+            shield: qaz
     steps:
       - name: Login to Docker Hub
         id: docker-hub-login
@@ -92,12 +104,13 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
       - name: Define repository
         id: repository
+        shell: bash
         run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: Build and push (candidate)
+      - name: Build and load candidate image
         id: build-push
         uses: docker/build-push-action@v2
         with:
@@ -113,7 +126,97 @@ jobs:
             docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
           cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:dev
           cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', env.docker-hub-namespace, env.cache-repository-name, 'dev') || null }}
-          push: ${{ steps.docker-hub-login.outcome == 'success' }}
+          load: true
+      - name: Create and run container from candidate image
+        shell: bash
+        run: docker run -d -it --name candidate ${{ env.docker-args }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+      - name: Checkout ZMK
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.zmk-repository }}
+          ref: ${{ env.zmk-ref }}
+      - name: Cache Zephyr modules
+        uses: actions/cache@v2
+        env:
+          cache-name: zephyr-modules
+        with:
+          path: |
+            modules/
+            tools/
+            zephyr/
+            bootloader/
+          key: ${{ runner.os }}/${{ env.cache-name }}/${{ hashFiles('app/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}/${{ env.cache-name }}/
+      - name: Test diff
+        run: diff --version
+      - name: Test west init
+        run: west init -l app
+      - name: Test west update
+        run: west update
+      - name: Test west zephyr-export
+        run: west zephyr-export
+      - name: Test board/shield (west build)
+        if: ${{ matrix.board != null }}
+        run: west build -s app -b ${{ matrix.board }} -- ${{ matrix.shield != null && format('-DSHIELD={0}', matrix.shield) || null }}
+      - name: Test RAM report (west build)
+        run: west build -t ram_report
+      - name: Test ROM report (west build)
+        run: west build -t rom_report
+      - name: Test west test (single)
+        run: west test tests/none/normal
+      - name: Test west test (full)
+        if: ${{ env.run-unit-tests == 'true' }}
+        run: west test
+      - name: Test clean (west build)
+        run: west build -t clean
+      - name: Test clang-format
+        if: ${{ matrix.target == 'dev' }}
+        run: clang-format --version
+      - name: Test node
+        if: ${{ matrix.target == 'dev' }}
+        run: node --version
+      - name: Test docs ci
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && npm ci
+      - name: Test docs lint
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && npm run lint
+      - name: Test docs prettier check
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && npm run prettier:check
+      - name: Test docs start (webpack-dev-server)
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && timeout -s SIGINT 20 npm run start &
+      - run: sleep 15
+        if: ${{ matrix.target == 'dev' }}
+      - name: Test docs wget (webpack-dev-server)
+        if: ${{ matrix.target == 'dev' }}
+        run: wget http://localhost:3000
+      - run: sleep 10
+        if: ${{ matrix.target == 'dev' }}
+      - name: Test docs build (webpack)
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && npm run build
+      - name: Test docs serve (webpack)
+        if: ${{ matrix.target == 'dev' }}
+        run: cd docs && timeout -s SIGINT 10 npm run serve &
+      - run: sleep 5
+        if: ${{ matrix.target == 'dev' }}
+      - name: Test docs wget (webpack)
+        if: ${{ matrix.target == 'dev' }}
+        run: wget http://localhost:3000
+      - name: Test ssh
+        if: ${{ matrix.target == 'dev' }}
+        run: ssh -V
+      - name: Stop container
+        shell: bash
+        run: docker stop candidate
+      - name: Push candidate image to the registry
+        if: ${{ steps.docker-hub-login.outcome == 'success' }}
+        shell: bash
+        run: |
+          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
   releases:
     needs:
       - architectures
