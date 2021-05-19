@@ -38,6 +38,7 @@ jobs:
   tags:
     runs-on: ubuntu-latest
     outputs:
+      branch: ${{ steps.definitions.outputs.branch }}
       candidate: ${{ steps.definitions.outputs.candidate }}
       versions: ${{ steps.definitions.outputs.versions }}
       major-minor: ${{ steps.definitions.outputs.major-minor }}
@@ -51,6 +52,8 @@ jobs:
           ZEPHYR_VERSION: ${{ env.zephyr-version }}
           ZEPHYR_SDK_VERSION: ${{ env.zephyr-sdk-version }}
         run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          BRANCH=${BRANCH//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
           CANDIDATE=${SHA}
           VERSIONS=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
           MAJOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 1)
@@ -59,6 +62,7 @@ jobs:
           LATEST=${MAJOR_MINOR}
           RELEASE_TRIGGER=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
 
+          echo ::set-output name=branch::${BRANCH}
           echo ::set-output name=candidate::${CANDIDATE}
           echo ::set-output name=versions::${VERSIONS}
           echo ::set-output name=major-minor::${MAJOR_MINOR}
@@ -124,8 +128,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
             docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:dev
-          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', env.docker-hub-namespace, env.cache-repository-name, 'dev') || null }}
+          cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:${{ needs.tags.outputs.branch }}-dev
+          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2}-{3},mode=max', env.docker-hub-namespace, env.cache-repository-name, needs.tags.outputs.branch, 'dev') || null }}
           load: true
       - name: Create and run container from candidate image
         shell: bash
