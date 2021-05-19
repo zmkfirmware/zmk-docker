@@ -4,6 +4,8 @@ env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
   cache-repository-name: zmk-docker-cache
+  docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
+  ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
   docker-hub-namespace: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
   ghcr-namespace: ${{ github.repository_owner }}
 
@@ -15,20 +17,6 @@ on:
 concurrency: ${{ github.workflow }}
     
 jobs:
-  credentials:
-    runs-on: ubuntu-latest
-    outputs:
-      ghcr: ${{ steps.ghcr.outcome == 'success' }}
-      docker-hub: ${{ steps.docker-hub.outcome == 'success' }}
-    steps:
-      - name: Docker Hub
-        id: docker-hub
-        run: if [ ${{ secrets.DOCKER_HUB_USERNAME == null || secrets.DOCKER_HUB_TOKEN == null }} = true ]; then exit 1; fi
-        continue-on-error: true
-      - name: GitHub Container Registry
-        id: ghcr
-        run: if [ ${{ secrets.GHCR_USERNAME == null || secrets.GHCR_TOKEN == null }} = true ]; then exit 1; fi
-        continue-on-error: true
   architectures:
     runs-on: ubuntu-latest
     outputs:
@@ -75,7 +63,6 @@ jobs:
           echo ::set-output name=release-trigger::${RELEASE_TRIGGER}
   candidates:
     needs:
-      - credentials
       - architectures
       - tags
     if: ${{ !startsWith(github.ref, 'refs/tags') }}
@@ -90,14 +77,14 @@ jobs:
     steps:
       - name: Login to Docker Hub
         id: docker-hub-login
-        if: ${{ needs.credentials.outputs.docker-hub == 'true' }}
+        if: ${{ env.docker-hub-credentials == 'true' }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Login to GitHub Container Registry
         id: ghcr-login
-        if: ${{ needs.credentials.outputs.ghcr == 'true' }}
+        if: ${{ env.ghcr-credentials == 'true' }}
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
@@ -129,7 +116,6 @@ jobs:
           push: ${{ steps.docker-hub-login.outcome == 'success' }}
   releases:
     needs:
-      - credentials
       - architectures
       - tags
     if: ${{ github.ref == format('refs/tags/{0}', needs.tags.outputs.release-trigger) }}
