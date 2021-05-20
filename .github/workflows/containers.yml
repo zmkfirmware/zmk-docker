@@ -404,6 +404,8 @@ jobs:
         run: ssh -V
       - name: Test gdb
         run: gdb --version
+      - name: Test socat
+        run: socat -V
       - name: Stop container
         shell: bash
         run: docker stop candidate
