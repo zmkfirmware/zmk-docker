@@ -367,11 +367,14 @@ jobs:
       - name: Test west zephyr-export
         run: west zephyr-export
       - name: Test board/shield (west build)
+        id: board-shield
         if: ${{ matrix.board != null }}
         run: west build -s app -b ${{ matrix.board }} -- ${{ matrix.shield != null && format('-DSHIELD={0}', matrix.shield) || null }}
       - name: Test RAM report (west build)
+        if: ${{ steps.board-shield.outcome == 'success' }}
         run: west build -t ram_report
       - name: Test ROM report (west build)
+        if: ${{ steps.board-shield.outcome == 'success' }}
         run: west build -t rom_report
       - name: Test west test (single)
         run: west test tests/none/normal
@@ -379,6 +382,7 @@ jobs:
         if: ${{ env.run-unit-tests == 'true' }}
         run: west test
       - name: Test clean (west build)
+        if: ${{ steps.board-shield.outcome == 'success' }}
         run: west build -t clean
       - name: Stop container
         shell: bash
