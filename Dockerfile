@@ -64,6 +64,7 @@ RUN \
   python3-setuptools \
   python3-tk \
   python3-wheel \
+  socat \
   ssh \
   wget \
   xz-utils \
