@@ -112,6 +112,21 @@ jobs:
           echo ::set-output name=build::zmk-build-${{ matrix.architecture }}
           echo ::set-output name=dev::zmk-dev-${{ matrix.architecture }}
           echo ::set-output name=target::zmk-${{ matrix.target }}-${{ matrix.architecture }}
+      - name: Define paths
+        id: paths
+        shell: bash
+        env:
+          NS: ${{ env.docker-hub-namespace }}
+          TARGET: ${{ steps.repositories.outputs.target }}
+          BUILD: ${{ steps.repositories.outputs.build }}
+          DEV: ${{ steps.repositories.outputs.dev }}
+          CANDIDATE: ${{ needs.tags.outputs.candidate }}
+          BRANCH: ${{ needs.tags.outputs.branch }}
+        run: |
+          echo ::set-output name=target-candidate::docker.io/${NS}/${TARGET}:${CANDIDATE}
+          echo ::set-output name=target-branch::docker.io/${NS}/${TARGET}:${BRANCH}
+          echo ::set-output name=build-branch::docker.io/${NS}/${BUILD}:${BRANCH}
+          echo ::set-output name=dev-branch::docker.io/${NS}/${DEV}:${BRANCH}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -129,16 +144,16 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
-            docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
-            docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.branch }}
+            ${{ steps.paths.outputs.target-candidate }}
+            ${{ steps.paths.outputs.target-branch }}
           cache-from: |
-            type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.build }}:${{ needs.tags.outputs.branch }}
-            type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.dev }}:${{ needs.tags.outputs.branch }}
+            type=registry,ref=${{ steps.paths.outputs.build-branch }}
+            type=registry,ref=${{ steps.paths.outputs.dev-branch }}
           cache-to: type=inline
           load: true
       - name: Create and run container from candidate image
         shell: bash
-        run: docker run -d -it --name candidate ${{ env.docker-args }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
+        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.target-candidate }}
       - name: Checkout ZMK
         uses: actions/checkout@v2
         with:
@@ -225,8 +240,8 @@ jobs:
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
         shell: bash
         run: |
-          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
-          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.branch }}
+          docker image push ${{ steps.paths.outputs.target-candidate }}
+          docker image push ${{ steps.paths.outputs.target-branch }}
   releases:
     needs:
       - architectures
