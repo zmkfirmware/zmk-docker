@@ -4,7 +4,6 @@ env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
   run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
-  cache-repository-name: zmk-docker-cache
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
   ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
   docker-hub-namespace: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
@@ -83,9 +82,9 @@ jobs:
       max-parallel: 1 # takes advantage of caching between jobs
       matrix: 
         architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
-        target: # ordered from biggest to smallest to take advantage of the registry cache
-          - dev
+        target: # ordered from smallest to biggest to take advantage of the inline cache
           - build
+          - dev
         include:
           - architecture: arm
             board: nice_nano
@@ -106,10 +105,13 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
-      - name: Define repository
-        id: repository
+      - name: Define repositories
+        id: repositories
         shell: bash
-        run: echo ::set-output name=name::zmk-${{ matrix.target }}-${{ matrix.architecture }}
+        run: |
+          echo ::set-output name=build::zmk-build-${{ matrix.architecture }}
+          echo ::set-output name=dev::zmk-dev-${{ matrix.architecture }}
+          echo ::set-output name=target::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -127,13 +129,16 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
-            docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
-          cache-from: type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ env.cache-repository-name }}:${{ needs.tags.outputs.branch }}
-          cache-to: ${{ (steps.docker-hub-login.outcome == 'success') && (matrix.target == 'dev') && format('type=registry,ref=docker.io/{0}/{1}:{2},mode=max', env.docker-hub-namespace, env.cache-repository-name, needs.tags.outputs.branch) || null }}
+            docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
+            docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.branch }}
+          cache-from: |
+            type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.build }}:${{ needs.tags.outputs.branch }}
+            type=registry,ref=docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.dev }}:${{ needs.tags.outputs.branch }}
+          cache-to: type=inline
           load: true
       - name: Create and run container from candidate image
         shell: bash
-        run: docker run -d -it --name candidate ${{ env.docker-args }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+        run: docker run -d -it --name candidate ${{ env.docker-args }} docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
       - name: Checkout ZMK
         uses: actions/checkout@v2
         with:
@@ -220,7 +225,8 @@ jobs:
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
         shell: bash
         run: |
-          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repository.outputs.name }}:${{ needs.tags.outputs.candidate }}
+          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.candidate }}
+          docker image push docker.io/${{ env.docker-hub-namespace }}/${{ steps.repositories.outputs.target }}:${{ needs.tags.outputs.branch }}
   releases:
     needs:
       - architectures
