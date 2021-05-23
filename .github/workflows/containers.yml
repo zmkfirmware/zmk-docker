@@ -82,9 +82,6 @@ jobs:
       max-parallel: 1 # takes advantage of caching between jobs
       matrix: 
         architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
-        target: # ordered from smallest to biggest to take advantage of the inline cache
-          - build
-          - dev
         include:
           - architecture: arm
             board: nice_nano
@@ -111,49 +108,86 @@ jobs:
         run: |
           echo ::set-output name=build::zmk-build-${{ matrix.architecture }}
           echo ::set-output name=dev::zmk-dev-${{ matrix.architecture }}
-          echo ::set-output name=target::zmk-${{ matrix.target }}-${{ matrix.architecture }}
       - name: Define paths
         id: paths
         shell: bash
         env:
           NS: ${{ env.docker-hub-namespace }}
-          TARGET: ${{ steps.repositories.outputs.target }}
           BUILD: ${{ steps.repositories.outputs.build }}
           DEV: ${{ steps.repositories.outputs.dev }}
           CANDIDATE: ${{ needs.tags.outputs.candidate }}
           BRANCH: ${{ needs.tags.outputs.branch }}
         run: |
-          echo ::set-output name=target-candidate::docker.io/${NS}/${TARGET}:${CANDIDATE}
-          echo ::set-output name=target-branch::docker.io/${NS}/${TARGET}:${BRANCH}
+          echo ::set-output name=build-candidate::docker.io/${NS}/${BUILD}:${CANDIDATE}
           echo ::set-output name=build-branch::docker.io/${NS}/${BUILD}:${BRANCH}
+          echo ::set-output name=dev-candidate::docker.io/${NS}/${DEV}:${CANDIDATE}
           echo ::set-output name=dev-branch::docker.io/${NS}/${DEV}:${BRANCH}
+      - name: Define build-args
+        id: build-args
+        shell: bash
+        run: |
+          LIST="
+            ZEPHYR_VERSION=${{ env.zephyr-version }}
+            ARCHITECTURE=${{ matrix.architecture }}
+            ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
+          "
+          # Escapes %, \n and \r
+          # See: https://github.community/t/set-output-truncates-multiline-strings/16852
+          LIST="${LIST//'%'/'%25'}"
+          LIST="${LIST//$'\n'/'%0A'}"
+          LIST="${LIST//$'\r'/'%0D'}"
+          echo ::set-output name=list::${LIST}
+      - name: Define labels
+        id: labels
+        shell: bash
+        run: |
+          LIST="
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          "
+          # Escapes %, \n and \r
+          # See: https://github.community/t/set-output-truncates-multiline-strings/16852
+          LIST="${LIST//'%'/'%25'}"
+          LIST="${LIST//$'\n'/'%0A'}"
+          LIST="${LIST//$'\r'/'%0D'}"
+          echo ::set-output name=list::${LIST}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: Build and load candidate image
-        id: build-push
+      - name: Build and load 'build' candidate image
         uses: docker/build-push-action@v2
         with:
-          target: ${{ matrix.target }}
+          target: build
           build-args: |
-            ZEPHYR_VERSION=${{ env.zephyr-version }}
-            ARCHITECTURE=${{ matrix.architecture }}
-            ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
+            ${{ steps.build-args.outputs.list }}
           labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            ${{ steps.labels.outputs.list }}
           tags: |
-            ${{ steps.paths.outputs.target-candidate }}
-            ${{ steps.paths.outputs.target-branch }}
+            ${{ steps.paths.outputs.build-candidate }}
+            ${{ steps.paths.outputs.build-branch }}
           cache-from: |
+            type=registry,ref=${{ steps.paths.outputs.build-candidate }}
             type=registry,ref=${{ steps.paths.outputs.build-branch }}
+          cache-to: type=inline
+          load: true
+      - name: Build and load 'dev' candidate image
+        uses: docker/build-push-action@v2
+        with:
+          target: dev
+          build-args: |
+            ${{ steps.build-args.outputs.list }}
+          labels: |
+            ${{ steps.labels.outputs.list }}
+          tags: |
+            ${{ steps.paths.outputs.dev-candidate }}
+            ${{ steps.paths.outputs.dev-branch }}
+          cache-from: |
+            type=registry,ref=${{ steps.paths.outputs.build-candidate }}
+            type=registry,ref=${{ steps.paths.outputs.dev-candidate }}
             type=registry,ref=${{ steps.paths.outputs.dev-branch }}
           cache-to: type=inline
           load: true
-      - name: Create and run container from candidate image
-        shell: bash
-        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.target-candidate }}
       - name: Checkout ZMK
         uses: actions/checkout@v2
         with:
@@ -172,6 +206,9 @@ jobs:
           key: ${{ runner.os }}/${{ env.cache-name }}/${{ hashFiles('app/west.yml') }}
           restore-keys: |
             ${{ runner.os }}/${{ env.cache-name }}/
+      - name: Create and run container from 'build' candidate image
+        shell: bash
+        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
       - name: Test diff
         run: diff --version
       - name: Test west init
@@ -194,54 +231,48 @@ jobs:
         run: west test
       - name: Test clean (west build)
         run: west build -t clean
+      - name: Stop container
+        shell: bash
+        run: docker stop candidate
+      - name: Create and run container from 'dev' candidate image
+        shell: bash
+        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.dev-candidate }}
       - name: Test clang-format
-        if: ${{ matrix.target == 'dev' }}
         run: clang-format --version
       - name: Test node
-        if: ${{ matrix.target == 'dev' }}
         run: node --version
       - name: Test docs ci
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && npm ci
       - name: Test docs lint
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && npm run lint
       - name: Test docs prettier check
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && npm run prettier:check
       - name: Test docs start (webpack-dev-server)
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && timeout -s SIGINT 20 npm run start &
       - run: sleep 15
-        if: ${{ matrix.target == 'dev' }}
       - name: Test docs wget (webpack-dev-server)
-        if: ${{ matrix.target == 'dev' }}
         run: wget http://localhost:3000
       - run: sleep 10
-        if: ${{ matrix.target == 'dev' }}
       - name: Test docs build (webpack)
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && npm run build
       - name: Test docs serve (webpack)
-        if: ${{ matrix.target == 'dev' }}
         run: cd docs && timeout -s SIGINT 10 npm run serve &
       - run: sleep 5
-        if: ${{ matrix.target == 'dev' }}
       - name: Test docs wget (webpack)
-        if: ${{ matrix.target == 'dev' }}
         run: wget http://localhost:3000
       - name: Test ssh
-        if: ${{ matrix.target == 'dev' }}
         run: ssh -V
       - name: Stop container
         shell: bash
         run: docker stop candidate
-      - name: Push candidate image to the registry
+      - name: Push candidate images to the registry
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
         shell: bash
         run: |
-          docker image push ${{ steps.paths.outputs.target-candidate }}
-          docker image push ${{ steps.paths.outputs.target-branch }}
+          docker image push ${{ steps.paths.outputs.build-candidate }}
+          docker image push ${{ steps.paths.outputs.build-branch }}
+          docker image push ${{ steps.paths.outputs.dev-candidate }}
+          docker image push ${{ steps.paths.outputs.dev-branch }}
   releases:
     needs:
       - architectures
