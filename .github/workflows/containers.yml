@@ -3,6 +3,7 @@ name: Containers
 env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
+  sha-abbrev-length: 12
   no-cache: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
   run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
@@ -47,25 +48,26 @@ jobs:
       versions: ${{ steps.definitions.outputs.versions }} # e.g. 2.4.0-0.11.4
       major-minor: ${{ steps.definitions.outputs.major-minor }} # e.g. 2.4
       major-minor-branch: ${{ steps.definitions.outputs.major-minor-branch }} # e.g. 2.4-branch
-      release-trigger: ${{ steps.definitions.outputs.release-trigger }}
     steps:
       - name: Definitions
         id: definitions
         env:
           SHA: ${{ github.sha }}
+          SHA_ABBREV_LENGTH: ${{ env.sha-abbrev-length }}
+          RUN_ID: ${{ github.run_id }}
           ZEPHYR_VERSION: ${{ env.zephyr-version }}
           ZEPHYR_SDK_VERSION: ${{ env.zephyr-sdk-version }}
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
           BRANCH=${BRANCH//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
           BASE=${GITHUB_BASE_REF//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
-          CANDIDATE=${SHA}
+          SHA=${SHA:0:${SHA_ABBREV_LENGTH}}
+          CANDIDATE=${BRANCH}-$(date +%Y%m%d%H%M%S)-${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}-${SHA}-${RUN_ID}
           VERSIONS=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
           MAJOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 1)
           MINOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 2)
           MAJOR_MINOR=${MAJOR}.${MINOR}
           MAJOR_MINOR_BRANCH=${MAJOR_MINOR}-branch
-          RELEASE_TRIGGER=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
 
           echo ::set-output name=branch::${BRANCH}
           echo ::set-output name=base::${BASE}
@@ -73,7 +75,6 @@ jobs:
           echo ::set-output name=versions::${VERSIONS}
           echo ::set-output name=major-minor::${MAJOR_MINOR}
           echo ::set-output name=major-minor-branch::${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=release-trigger::${RELEASE_TRIGGER}
   dev-generic:
     needs:
       - tags
@@ -404,11 +405,76 @@ jobs:
           docker image push ${{ steps.paths.outputs.build-branch }}
           docker image push ${{ steps.paths.outputs.dev-candidate }}
           docker image push ${{ steps.paths.outputs.dev-branch }}
+  release-trigger:
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.match.outputs.tag }}
+      branch: ${{ steps.match.outputs.branch }}
+      datetime: ${{ steps.match.outputs.datetime }}
+      date: ${{ steps.match.outputs.date }}
+      year: ${{ steps.match.outputs.year }}
+      month: ${{ steps.match.outputs.month }}
+      day: ${{ steps.match.outputs.day }}
+      time: ${{ steps.match.outputs.time }}
+      hour: ${{ steps.match.outputs.hour }}
+      minute: ${{ steps.match.outputs.minute }}
+      second: ${{ steps.match.outputs.second }}
+      zephyr-version: ${{ steps.match.outputs.zephyr-version }}
+      zephyr-version-major: ${{ steps.match.outputs.zephyr-version-major }}
+      zephyr-version-minor: ${{ steps.match.outputs.zephyr-version-minor }}
+      zephyr-version-patch: ${{ steps.match.outputs.zephyr-version-patch }}
+      zephyr-sdk-version: ${{ steps.match.outputs.zephyr-sdk-version }}
+      zephyr-sdk-version-major: ${{ steps.match.outputs.zephyr-sdk-version-major }}
+      zephyr-sdk-version-minor: ${{ steps.match.outputs.zephyr-sdk-version-minor }}
+      zephyr-sdk-version-patch: ${{ steps.match.outputs.zephyr-sdk-version-patch }}
+      sha: ${{ steps.match.outputs.sha }}
+      run-id: ${{ steps.match.outputs.run-id }}
+    steps:
+      - name: Is tag a release trigger?
+        id: match
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          PATTERN="^(.+?)-((([0-9]{4})(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01]))(([01]?[0-9]|2[0-3])([0-5][0-9])([0-5][0-9])))-(([0-9]+)\.([0-9]+)\.([0-9]+))-(([0-9]+)\.([0-9]+)\.([0-9]+))-([0-9a-fA-F]+)-([0-9]+)$"
+          if [[ "${TAG}" =~ $PATTERN ]]; then
+            echo ::set-output name=tag::${TAG}
+            echo ::set-output name=branch::${BASH_REMATCH[1]}
+            echo ::set-output name=datetime::${BASH_REMATCH[2]}
+            echo ::set-output name=date::${BASH_REMATCH[3]}
+            echo ::set-output name=year::${BASH_REMATCH[4]}
+            echo ::set-output name=month::${BASH_REMATCH[5]}
+            echo ::set-output name=day::${BASH_REMATCH[6]}
+            echo ::set-output name=time::${BASH_REMATCH[7]}
+            echo ::set-output name=hour::${BASH_REMATCH[8]}
+            echo ::set-output name=minute::${BASH_REMATCH[9]}
+            echo ::set-output name=second::${BASH_REMATCH[10]}
+            echo ::set-output name=zephyr-version::${BASH_REMATCH[11]}
+            echo ::set-output name=zephyr-version-major::${BASH_REMATCH[12]}
+            echo ::set-output name=zephyr-version-minor::${BASH_REMATCH[13]}
+            echo ::set-output name=zephyr-version-patch::${BASH_REMATCH[14]}
+            echo ::set-output name=zephyr-sdk-version::${BASH_REMATCH[15]}
+            echo ::set-output name=zephyr-sdk-version-major::${BASH_REMATCH[16]}
+            echo ::set-output name=zephyr-sdk-version-minor::${BASH_REMATCH[17]}
+            echo ::set-output name=zephyr-sdk-version-patch::${BASH_REMATCH[18]}
+            SHA=${BASH_REMATCH[19]}
+            echo ::set-output name=sha::${SHA}
+            echo ::set-output name=run-id::${BASH_REMATCH[20]}
+
+            if [[ "${{ github.sha }}" != ${SHA}* ]]; then
+              echo "Hashes do not match!"
+              echo "${{ github.sha }}"
+              echo "${SHA}"
+              exit 1
+            fi
+          else
+            echo "Tag not recognised, ignoring ..."
+          fi
   releases:
     needs:
       - architectures
       - tags
-    if: ${{ github.ref == format('refs/tags/{0}', needs.tags.outputs.release-trigger) }}
+      - release-trigger
+    if: ${{ needs.release-trigger.outputs.sha != null }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -436,7 +502,7 @@ jobs:
           GHCRNS: ${{ env.ghcr-namespace }}
           TARGET: ${{ matrix.target }}
           ARCHITECTURE: ${{ matrix.architecture }}
-          CANDIDATE: ${{ needs.tags.outputs.candidate }}
+          CANDIDATE: ${{ needs.release-trigger.outputs.tag }}
           VERSIONS: ${{ needs.tags.outputs.versions }}
           MAJOR_MINOR: ${{ needs.tags.outputs.major-minor }}
         run: |
