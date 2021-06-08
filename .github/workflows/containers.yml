@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       branch: ${{ steps.definitions.outputs.branch }}
+      base: ${{ steps.definitions.outputs.base }}
       candidate: ${{ steps.definitions.outputs.candidate }}
       versions: ${{ steps.definitions.outputs.versions }}
       major-minor: ${{ steps.definitions.outputs.major-minor }}
@@ -53,6 +54,7 @@ jobs:
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
           BRANCH=${BRANCH//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
+          BASE=${GITHUB_BASE_REF//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
           CANDIDATE=${SHA}
           VERSIONS=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
           MAJOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 1)
@@ -62,6 +64,7 @@ jobs:
           RELEASE_TRIGGER=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
 
           echo ::set-output name=branch::${BRANCH}
+          echo ::set-output name=base::${BASE}
           echo ::set-output name=candidate::${CANDIDATE}
           echo ::set-output name=versions::${VERSIONS}
           echo ::set-output name=major-minor::${MAJOR_MINOR}
@@ -117,11 +120,18 @@ jobs:
           DEV: ${{ steps.repositories.outputs.dev }}
           CANDIDATE: ${{ needs.tags.outputs.candidate }}
           BRANCH: ${{ needs.tags.outputs.branch }}
+          BASE: ${{ needs.tags.outputs.base }}
         run: |
           echo ::set-output name=build-candidate::docker.io/${NS}/${BUILD}:${CANDIDATE}
           echo ::set-output name=build-branch::docker.io/${NS}/${BUILD}:${BRANCH}
+          if [ ! -z "$BASE" ]; then
+            echo ::set-output name=build-base::docker.io/${NS}/${BUILD}:${BASE}
+          fi
           echo ::set-output name=dev-candidate::docker.io/${NS}/${DEV}:${CANDIDATE}
           echo ::set-output name=dev-branch::docker.io/${NS}/${DEV}:${BRANCH}
+          if [ ! -z "$BASE" ]; then
+            echo ::set-output name=dev-base::docker.io/${NS}/${DEV}:${BASE}
+          fi
       - name: Define build-args
         id: build-args
         shell: bash
@@ -169,6 +179,7 @@ jobs:
           cache-from: |
             type=registry,ref=${{ steps.paths.outputs.build-candidate }}
             type=registry,ref=${{ steps.paths.outputs.build-branch }}
+            ${{ (steps.paths.outputs.build-base != '') && format('type=registry,ref={0}', steps.paths.outputs.build-base) || '' }}
           cache-to: type=inline
           load: true
       - name: Build and load 'dev' candidate image
@@ -186,6 +197,7 @@ jobs:
             type=registry,ref=${{ steps.paths.outputs.build-candidate }}
             type=registry,ref=${{ steps.paths.outputs.dev-candidate }}
             type=registry,ref=${{ steps.paths.outputs.dev-branch }}
+            ${{ (steps.paths.outputs.dev-base != '') && format('type=registry,ref={0}', steps.paths.outputs.dev-base) || '' }}
           cache-to: type=inline
           load: true
       - name: Checkout ZMK
