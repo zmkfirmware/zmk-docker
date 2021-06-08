@@ -1,7 +1,7 @@
 name: Containers
 
 env:
-  zephyr-version: 2.5.0
+  zephyr-version: 2.6.0
   zephyr-sdk-version: 0.12.4
   sha-abbrev-length: 12
   no-cache: ${{ secrets.NO_CACHE != null || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
