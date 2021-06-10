@@ -32,8 +32,7 @@ RUN \
   python3-setuptools \
   python3-wheel \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
-  && cmake --version
+  && rm -rf /var/lib/apt/lists/*
 
 #------------------------------------------------------------------------------
 
