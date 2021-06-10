@@ -47,7 +47,6 @@ jobs:
       versions: ${{ steps.definitions.outputs.versions }} # e.g. 2.4.0-0.11.4
       major-minor: ${{ steps.definitions.outputs.major-minor }} # e.g. 2.4
       major-minor-branch: ${{ steps.definitions.outputs.major-minor-branch }} # e.g. 2.4-branch
-      latest: ${{ steps.definitions.outputs.latest }}
       release-trigger: ${{ steps.definitions.outputs.release-trigger }}
     steps:
       - name: Definitions
@@ -66,7 +65,6 @@ jobs:
           MINOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 2)
           MAJOR_MINOR=${MAJOR}.${MINOR}
           MAJOR_MINOR_BRANCH=${MAJOR_MINOR}-branch
-          LATEST=${MAJOR_MINOR}
           RELEASE_TRIGGER=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
 
           echo ::set-output name=branch::${BRANCH}
@@ -75,7 +73,6 @@ jobs:
           echo ::set-output name=versions::${VERSIONS}
           echo ::set-output name=major-minor::${MAJOR_MINOR}
           echo ::set-output name=major-minor-branch::${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=latest::${LATEST}
           echo ::set-output name=release-trigger::${RELEASE_TRIGGER}
   dev-generic:
     needs:
@@ -441,22 +438,22 @@ jobs:
           ARCHITECTURE: ${{ matrix.architecture }}
           CANDIDATE: ${{ needs.tags.outputs.candidate }}
           VERSIONS: ${{ needs.tags.outputs.versions }}
-          LATEST: ${{ needs.tags.outputs.latest }}
+          MAJOR_MINOR: ${{ needs.tags.outputs.major-minor }}
         run: |
           REPOSITORY=zmk-${TARGET}-${ARCHITECTURE}
           
           docker pull docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE}
           docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:${VERSIONS}
-          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:${LATEST}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:${MAJOR_MINOR}
           docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${CANDIDATE}
           docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${VERSIONS}
-          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${LATEST}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} ghcr.io/${GHCRNS}/${REPOSITORY}:${MAJOR_MINOR}
           docker push docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE}
           docker push docker.io/${DHNS}/${REPOSITORY}:${VERSIONS}
-          docker push docker.io/${DHNS}/${REPOSITORY}:${LATEST}
+          docker push docker.io/${DHNS}/${REPOSITORY}:${MAJOR_MINOR}
           docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${CANDIDATE}
           docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${VERSIONS}
-          docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${LATEST}
+          docker push ghcr.io/${GHCRNS}/${REPOSITORY}:${MAJOR_MINOR}
   git-tag:
     needs:
     - tags
