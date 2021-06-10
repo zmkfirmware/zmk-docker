@@ -69,8 +69,7 @@ RUN \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-build-test.txt \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-run-test.txt \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
-  && node --version
+  && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=
 
