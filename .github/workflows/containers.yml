@@ -343,6 +343,8 @@ jobs:
         run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
       - name: Test cmake
         run: cmake --version
+      - name: Test python
+        run: python3 --version
       - name: Test diff
         run: diff --version
       - name: Test west init
