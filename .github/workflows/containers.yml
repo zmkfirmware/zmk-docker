@@ -41,9 +41,9 @@ jobs:
       branch: ${{ steps.definitions.outputs.branch }}
       base: ${{ steps.definitions.outputs.base }}
       candidate: ${{ steps.definitions.outputs.candidate }}
-      versions: ${{ steps.definitions.outputs.versions }}
-      major-minor: ${{ steps.definitions.outputs.major-minor }}
-      major-minor-branch: ${{ steps.definitions.outputs.major-minor-branch }}
+      versions: ${{ steps.definitions.outputs.versions }} # e.g. 2.4.0-0.11.4
+      major-minor: ${{ steps.definitions.outputs.major-minor }} # e.g. 2.4
+      major-minor-branch: ${{ steps.definitions.outputs.major-minor-branch }} # e.g. 2.4-branch
       latest: ${{ steps.definitions.outputs.latest }}
       release-trigger: ${{ steps.definitions.outputs.release-trigger }}
     steps:
