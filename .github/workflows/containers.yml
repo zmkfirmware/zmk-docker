@@ -4,7 +4,7 @@ env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
   sha-abbrev-length: 12
-  no-cache: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+  no-cache: ${{ secrets.NO_CACHE != null || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
   run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
   ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
