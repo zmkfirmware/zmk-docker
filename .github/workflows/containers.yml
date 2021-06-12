@@ -3,6 +3,7 @@ name: Containers
 env:
   zephyr-version: 2.4.0
   zephyr-sdk-version: 0.11.4
+  no-cache: ${{ github.event_name == 'workflow_dispatch' }}
   run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
   ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
@@ -124,7 +125,7 @@ jobs:
           key: ${{ runner.os }}/${{ env.cache-name }}/${{ github.run_id }}
       - name: Rebuild cache?
         id: should-rebuild
-        run: echo ::set-output name=value::${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: echo ::set-output name=value::${{ steps.cache.outputs.cache-hit != 'true' || env.no-cache == 'true' }}
       - name: Set up QEMU
         if: ${{ steps.should-rebuild.outputs.value == 'true' }}
         uses: docker/setup-qemu-action@v1
@@ -138,6 +139,7 @@ jobs:
           target: dev-generic
           build-args: |
             ZEPHYR_VERSION=${{ env.zephyr-version }}
+          no-cache: ${{ env.no-cache == 'true' }}
           cache-from: |
             type=registry,ref=${{ steps.paths.outputs.branch }}
             ${{ (steps.paths.outputs.base != '') && format('type=registry,ref={0}', steps.paths.outputs.base) || '' }}
@@ -288,12 +290,12 @@ jobs:
             ${{ steps.paths.outputs.build-branch }}
           cache-from: |
             type=local,src=${{ steps.paths.outputs.dev-generic }}
-            type=registry,ref=${{ steps.paths.outputs.build-candidate }}
-            type=registry,ref=${{ steps.paths.outputs.build-branch }}
-            ${{ (steps.paths.outputs.build-base != '') && format('type=registry,ref={0}', steps.paths.outputs.build-base) || '' }}
-            type=registry,ref=${{ steps.paths.outputs.build-major-minor-branch }}
-            type=registry,ref=${{ steps.paths.outputs.build-branch-upstream }}
-            type=registry,ref=${{ steps.paths.outputs.build-major-minor-branch-upstream }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-candidate) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-branch) }}
+            ${{ (env.no-cache == 'false') && (steps.paths.outputs.build-base != '') && format('type=registry,ref={0}', steps.paths.outputs.build-base) || '' }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-major-minor-branch) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-branch-upstream) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-major-minor-branch-upstream) }}
           cache-to: type=inline
           load: true
       - name: Build and load 'dev' candidate image
@@ -310,12 +312,12 @@ jobs:
           cache-from: |
             type=registry,ref=${{ steps.paths.outputs.build-candidate }}
             type=local,src=${{ steps.paths.outputs.dev-generic }}
-            type=registry,ref=${{ steps.paths.outputs.dev-candidate }}
-            type=registry,ref=${{ steps.paths.outputs.dev-branch }}
-            ${{ (steps.paths.outputs.dev-base != '') && format('type=registry,ref={0}', steps.paths.outputs.dev-base) || '' }}
-            type=registry,ref=${{ steps.paths.outputs.dev-major-minor-branch }}
-            type=registry,ref=${{ steps.paths.outputs.dev-branch-upstream }}
-            type=registry,ref=${{ steps.paths.outputs.dev-major-minor-branch-upstream }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-candidate) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-branch) }}
+            ${{ (env.no-cache == 'false') && (steps.paths.outputs.dev-base != '') && format('type=registry,ref={0}', steps.paths.outputs.dev-base) || '' }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-major-minor-branch) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-branch-upstream) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-major-minor-branch-upstream) }}
           cache-to: type=inline
           load: true
       - name: Checkout ZMK
