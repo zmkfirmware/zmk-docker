@@ -101,7 +101,7 @@ jobs:
         env:
           NS: ${{ env.docker-hub-namespace }}
           NSU: ${{ env.docker-hub-namespace-upstream }}
-          REPOSITORY: zmk-dev-generic-cache
+          REPOSITORY: zmk-dev-generic
           BRANCH: ${{ needs.tags.outputs.branch }}
           BASE: ${{ needs.tags.outputs.base }}
           MAJOR_MINOR_BRANCH: ${{ needs.tags.outputs.major-minor-branch }}
@@ -154,8 +154,11 @@ jobs:
           target: dev-generic
           build-args: |
             ZEPHYR_VERSION=${{ env.zephyr-version }}
+          tags: |
+            ${{ steps.paths.outputs.branch }}
           cache-from: type=local,src=${{ steps.paths.outputs.local-new }}
-          cache-to: type=registry,ref=${{ steps.paths.outputs.branch }},mode=max
+          cache-to: type=inline
+          push: true
       # Workaround to stop the dev-generic cache ballooning ...
       # https://github.com/docker/build-push-action/issues/252
       # https://github.com/moby/buildkit/issues/1896
