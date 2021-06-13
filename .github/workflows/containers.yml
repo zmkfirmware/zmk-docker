@@ -5,6 +5,7 @@ env:
   zephyr-sdk-version: 0.11.4
   sha-abbrev-length: 12
   no-cache: ${{ secrets.NO_CACHE != null || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+  ignore-actions-cache: ${{ secrets.IGNORE_ACTIONS_CACHE != null }}
   run-unit-tests: ${{ secrets.RUN_UNIT_TESTS != null }}
   docker-hub-credentials: ${{ secrets.DOCKER_HUB_USERNAME != null && secrets.DOCKER_HUB_TOKEN != null }}
   ghcr-credentials: ${{ secrets.GHCR_USERNAME != null && secrets.GHCR_TOKEN != null }}
@@ -149,7 +150,7 @@ jobs:
             ZEPHYR_VERSION=${{ env.zephyr-version }}
           no-cache: ${{ env.no-cache == 'true' }}
           cache-from: |
-            type=local,src=${{ steps.paths.outputs.local }}
+            ${{ (env.ignore-actions-cache == 'false') && format('type=local,src={0}', steps.paths.outputs.local) || '' }}
             type=registry,ref=${{ steps.paths.outputs.branch }}
             ${{ (steps.paths.outputs.base != '') && format('type=registry,ref={0}', steps.paths.outputs.base) || '' }}
             type=registry,ref=${{ steps.paths.outputs.major-minor-branch }}
