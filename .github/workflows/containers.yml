@@ -24,6 +24,14 @@ on:
 concurrency: ${{ github.ref }}/${{ github.workflow }}
 
 jobs:
+  timestamp:
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.timestamp.outputs.timestamp }}
+    steps:
+      - name: Timestamp
+        id: timestamp
+        run: echo ::set-output name=timestamp::$(date +%Y%m%d%H%M%S)
   architectures:
     runs-on: ubuntu-latest
     outputs:
@@ -40,6 +48,8 @@ jobs:
             architectures = yaml.safe_load(file)
             print('::set-output name=json::' + json.dumps(architectures))
   tags:
+    needs:
+      - timestamp
     runs-on: ubuntu-latest
     outputs:
       branch: ${{ steps.definitions.outputs.branch }}
@@ -52,6 +62,7 @@ jobs:
       - name: Definitions
         id: definitions
         env:
+          TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
           SHA: ${{ github.sha }}
           SHA_ABBREV_LENGTH: ${{ env.sha-abbrev-length }}
           RUN_ID: ${{ github.run_id }}
@@ -62,7 +73,7 @@ jobs:
           BRANCH=${BRANCH//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
           BASE=${GITHUB_BASE_REF//[^A-Za-z0-9_.-]/_} # Substitutes invalid Docker tag characters
           SHA=${SHA:0:${SHA_ABBREV_LENGTH}}
-          CANDIDATE=${BRANCH}-$(date +%Y%m%d%H%M%S)-${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}-${SHA}-${RUN_ID}
+          CANDIDATE=${BRANCH}-${TIMESTAMP}-${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}-${SHA}-${RUN_ID}
           VERSIONS=${ZEPHYR_VERSION}-${ZEPHYR_SDK_VERSION}
           MAJOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 1)
           MINOR=$(echo ${ZEPHYR_VERSION} | cut -d'.' -f 2)
