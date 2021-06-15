@@ -65,6 +65,7 @@ RUN \
   python3-wheel \
   socat \
   ssh \
+  tio \
   wget \
   xz-utils \
   && pip3 install \

@@ -424,6 +424,8 @@ jobs:
       - name: Test arm-zephyr-eabi-gdb
         if: ${{ matrix.architecture == 'arm' }}
         run: /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb --version
+      - name: Test tio
+        run: tio --version
       - name: Test socat
         run: socat -V
       - name: Stop container
