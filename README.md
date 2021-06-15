@@ -27,7 +27,7 @@ Lightweight Docker images for [ZMK][zmk].
 
 For _building_ [ZMK][zmk] firmware with CI.
 
-- FROM: **[debian][debian]:stable-slim**
+- FROM: **[ubuntu][ubuntu]**
 - Includes:
   - essential [Zephyr][zephyr] dependencies (`apt-get`)
     - non-build dependencies are _not_ included. e.g. `pip3`, UI packages, etc.
@@ -44,6 +44,6 @@ For _developing_ [ZMK][zmk] (firmware and documentation).
   - build and test [Zephyr][zephyr] Python requirements
   - other useful development packages
 
-[debian]: https://hub.docker.com/_/debian "Debian"
+[ubuntu]: https://hub.docker.com/_/ubuntu "Ubuntu"
 [zephyr]: https://github.com/zephyrproject-rtos/zephyr "Zephyr"
 [zmk]: https://github.com/zmkfirmware/zmk "ZMK"
