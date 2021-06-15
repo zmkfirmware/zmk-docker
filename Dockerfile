@@ -10,6 +10,7 @@ RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
   ccache \
+  cmake \
   file \
   gcc \
   gcc-multilib \
@@ -22,10 +23,6 @@ RUN \
   python3-pip \
   python3-setuptools \
   python3-wheel \
-  && echo deb http://deb.debian.org/debian buster-backports main >> /etc/apt/sources.list \
-  && apt-get -y update \
-  && apt-get -y -t buster-backports install --no-install-recommends \
-  cmake \
   && pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-base.txt \
   && apt-get remove -y --purge \
@@ -45,7 +42,7 @@ ENV PAGER=less
 
 RUN \
   apt-get -y update \
-  && apt-get -y -t buster-backports install --no-install-recommends \
+  && apt-get -y install --no-install-recommends \
   curl \
   && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
   && apt-get -y update \
