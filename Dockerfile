@@ -1,4 +1,4 @@
-FROM debian:stable-20210511-slim AS common
+FROM ubuntu:focal-20210416 AS common
 
 CMD ["/bin/bash"]
 
