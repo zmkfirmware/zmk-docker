@@ -74,9 +74,6 @@ RUN \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-ARG ZEPHYR_SDK_VERSION
-ENV ZEPHYR_SDK_VERSION=${ZEPHYR_SDK_VERSION}
-
 ENV DEBIAN_FRONTEND=
 
 #------------------------------------------------------------------------------
