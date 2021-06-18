@@ -90,14 +90,12 @@ ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
-  bzip2 \
   wget \
   xz-utils \
   && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${ZEPHYR_SDK_SETUP_FILENAME}" \
   && sh ${ZEPHYR_SDK_SETUP_FILENAME} --quiet -- -d ${ZEPHYR_SDK_INSTALL_DIR} \
   && rm ${ZEPHYR_SDK_SETUP_FILENAME} \
   && apt-get remove -y --purge \
-  bzip2 \
   wget \
   xz-utils \
   && apt-get clean \
