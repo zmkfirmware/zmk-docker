@@ -401,8 +401,8 @@ jobs:
       - name: Test docs prettier check
         run: cd docs && npm run prettier:check
       - name: Test docs start (webpack-dev-server)
-        run: cd docs && timeout -s SIGINT 20 npm run start &
-      - run: sleep 15
+        run: cd docs && timeout -s SIGINT 30 npm run start &
+      - run: sleep 25
       - name: Test docs wget (webpack-dev-server)
         run: wget http://localhost:3000
       - run: sleep 10
