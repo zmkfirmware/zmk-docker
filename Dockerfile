@@ -7,8 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 ARG ZEPHYR_VERSION
 ENV ZEPHYR_VERSION=${ZEPHYR_VERSION}
 RUN \
-  apt-get -y update \
-  && apt-get -y install --no-install-recommends \
+  apt-get update -y \
+  && apt-get install -y --no-install-recommends \
   ccache \
   cmake \
   file \
@@ -41,12 +41,12 @@ ENV LC_ALL=C
 ENV PAGER=less
 
 RUN \
-  apt-get -y update \
-  && apt-get -y install --no-install-recommends \
+  apt-get update -y \
+  && apt-get install -y --no-install-recommends \
   curl \
   && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
-  && apt-get -y update \
-  && apt-get -y install --no-install-recommends \
+  && apt-get update -y \
+  && apt-get install -y --no-install-recommends \
   clang-format \
   g++-multilib \
   gdb \
@@ -88,8 +88,8 @@ ARG ZEPHYR_SDK_VERSION
 ARG ZEPHYR_SDK_SETUP_FILENAME=zephyr-toolchain-${ARCHITECTURE}-${ZEPHYR_SDK_VERSION}-x86_64-linux-setup.run
 ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 RUN \
-  apt-get -y update \
-  && apt-get -y install --no-install-recommends \
+  apt-get update -y \
+  && apt-get install -y --no-install-recommends \
   bzip2 \
   wget \
   xz-utils \
