@@ -146,6 +146,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           target: dev-generic
+          platforms: linux/amd64,linux/arm64
           build-args: |
             ZEPHYR_VERSION=${{ env.zephyr-version }}
           no-cache: ${{ env.no-cache == 'true' }}
@@ -162,6 +163,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           target: dev-generic
+          platforms: linux/amd64,linux/arm64
           build-args: |
             ZEPHYR_VERSION=${{ env.zephyr-version }}
           tags: |
@@ -431,14 +433,51 @@ jobs:
       - name: Stop container
         shell: bash
         run: docker stop candidate
-      - name: Push candidate images to the registry
-        if: ${{ steps.docker-hub-login.outcome == 'success' }}
-        shell: bash
-        run: |
-          docker image push ${{ steps.paths.outputs.build-candidate }}
-          docker image push ${{ steps.paths.outputs.build-branch }}
-          docker image push ${{ steps.paths.outputs.dev-candidate }}
-          docker image push ${{ steps.paths.outputs.dev-branch }}
+      - name: Build and push 'build' candidate image (x86_64 and arm64)
+        uses: docker/build-push-action@v2
+        with:
+          target: build
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            ${{ steps.build-args.outputs.list }}
+          labels: |
+            ${{ steps.labels.outputs.list }}
+          tags: |
+            ${{ steps.paths.outputs.build-candidate }}
+            ${{ steps.paths.outputs.build-branch }}
+          cache-from: |
+            type=local,src=${{ steps.paths.outputs.dev-generic }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-candidate) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-branch) }}
+            ${{ (env.no-cache == 'false') && (steps.paths.outputs.build-base != '') && format('type=registry,ref={0}', steps.paths.outputs.build-base) || '' }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-major-minor-branch) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-branch-upstream) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.build-major-minor-branch-upstream) }}
+          cache-to: type=inline
+          push: true
+      - name: Build and push 'dev' candidate image (x86_64 + arm64)
+        uses: docker/build-push-action@v2
+        with:
+          target: dev
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            ${{ steps.build-args.outputs.list }}
+          labels: |
+            ${{ steps.labels.outputs.list }}
+          tags: |
+            ${{ steps.paths.outputs.dev-candidate }}
+            ${{ steps.paths.outputs.dev-branch }}
+          cache-from: |
+            type=registry,ref=${{ steps.paths.outputs.build-candidate }}
+            type=local,src=${{ steps.paths.outputs.dev-generic }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-candidate) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-branch) }}
+            ${{ (env.no-cache == 'false') && (steps.paths.outputs.dev-base != '') && format('type=registry,ref={0}', steps.paths.outputs.dev-base) || '' }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-major-minor-branch) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-branch-upstream) }}
+            ${{ (env.no-cache == 'false') && format('type=registry,ref={0}', steps.paths.outputs.dev-major-minor-branch-upstream) }}
+          cache-to: type=inline
+          push: true
   release-trigger:
     if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
