@@ -607,3 +607,78 @@ jobs:
         run: |
           git tag ${TAG}
           git push -f origin ${TAG}
+  stable-release-trigger:
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.match.outputs.tag }}
+      stable-tag: ${{ steps.match.outputs.stable-tag }}
+    steps:
+      - name: Is tag a release trigger?
+        id: match
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          PATTERN="^(.+?)-stable$"
+          if [[ "${TAG}" =~ $PATTERN ]]; then
+            echo ::set-output name=tag::${TAG}
+            echo ::set-output name=stable-tag::${BASH_REMATCH[1]}
+          else
+            echo "Tag not recognised, ignoring ..."
+          fi
+  stable-releases:
+    needs:
+      - architectures
+      - tags
+      - stable-release-trigger
+    if: ${{ needs.stable-release-trigger.outputs.stable-tag != null }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: ${{ fromJSON(needs.architectures.outputs.json) }}
+        target:
+          - build
+          - dev
+    steps:
+      - name: Login to GitHub Container Registry
+        id: ghcr-login
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Login to Docker Hub
+        id: docker-hub-login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Release (pull candidate, tag, push)
+        env:
+          DHNS: ${{ env.docker-hub-namespace }}
+          GHCRNS: ${{ env.ghcr-namespace }}
+          TARGET: ${{ matrix.target }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+          CANDIDATE: ${{ needs.stable-release-trigger.outputs.stable-tag }}
+        run: |
+          REPOSITORY=zmk-${TARGET}-${ARCHITECTURE}
+          
+          docker pull docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE}
+          docker tag docker.io/${DHNS}/${REPOSITORY}:${CANDIDATE} docker.io/${DHNS}/${REPOSITORY}:stable
+          
+          docker push docker.io/${DHNS}/${REPOSITORY}:stable
+  stable-git-tag:
+    needs:
+    - tags
+    - stable-releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.stable-release-trigger.outputs.stable-tag }}
+      - name: Tag
+        env:
+          TAG: ${{ needs.tags.outputs.major-minor }}
+        run: |
+          git tag stable
+          git push -f origin stable
