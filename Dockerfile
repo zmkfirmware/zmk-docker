@@ -8,12 +8,10 @@ ARG ZEPHYR_VERSION
 ENV ZEPHYR_VERSION=${ZEPHYR_VERSION}
 RUN \
   apt-get -y update \
-  && if [ "$(uname -m)" = "x86_64" ]; then gcc_multilib="gcc-multilib"; else gcc_multilib=""; fi \
   && apt-get -y install --no-install-recommends \
   ccache \
   file \
   gcc \
-  "${gcc_multilib}" \
   git \
   gperf \
   make \
