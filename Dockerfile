@@ -74,9 +74,6 @@ RUN \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-ARG ZEPHYR_SDK_VERSION
-ENV ZEPHYR_SDK_VERSION=${ZEPHYR_SDK_VERSION}
-
 ENV DEBIAN_FRONTEND=
 
 #------------------------------------------------------------------------------
@@ -86,7 +83,7 @@ FROM common AS build
 ARG ARCHITECTURE
 ARG ZEPHYR_SDK_VERSION
 ARG ZEPHYR_SDK_SETUP_FILENAME=zephyr-toolchain-${ARCHITECTURE}-${ZEPHYR_SDK_VERSION}-x86_64-linux-setup.run
-ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
+ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
