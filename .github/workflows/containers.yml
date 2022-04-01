@@ -358,6 +358,8 @@ jobs:
         run: cmake --version
       - name: Test python
         run: python3 --version
+      - name: Test find
+        run: find --version
       - name: Test diff
         run: diff --version
       - name: Test west init
