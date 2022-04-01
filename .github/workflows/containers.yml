@@ -39,7 +39,7 @@ jobs:
       json: ${{ steps.import.outputs.json }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Import from architectures.yml
         id: import
         shell: python
@@ -336,7 +336,7 @@ jobs:
           cache-to: type=inline
           load: true
       - name: Checkout ZMK
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ env.zmk-repository }}
           ref: ${{ env.zmk-ref }}
@@ -600,7 +600,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Tag
         env:
           TAG: ${{ needs.tags.outputs.major-minor }}
@@ -673,7 +673,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ needs.stable-release-trigger.outputs.stable-tag }}
       - name: Tag
