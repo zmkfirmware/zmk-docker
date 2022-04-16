@@ -434,6 +434,7 @@ jobs:
         shell: bash
         run: docker stop candidate
       - name: Build and push 'build' candidate image (x86_64 and arm64)
+        if: ${{ steps.docker-hub-login.outcome == 'success' }}
         uses: docker/build-push-action@v2
         with:
           target: build
@@ -456,6 +457,7 @@ jobs:
           cache-to: type=inline
           push: true
       - name: Build and push 'dev' candidate image (x86_64 + arm64)
+        if: ${{ steps.docker-hub-login.outcome == 'success' }}
         uses: docker/build-push-action@v2
         with:
           target: dev
