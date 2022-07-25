@@ -8,6 +8,7 @@ ARG ZEPHYR_VERSION
 ENV ZEPHYR_VERSION=${ZEPHYR_VERSION}
 RUN \
   apt-get -y update \
+  && apt-get dist-upgrade -y \
   && apt-get -y install --no-install-recommends \
   ccache \
   cmake \
