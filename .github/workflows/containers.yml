@@ -356,6 +356,8 @@ jobs:
       - name: Create and run container from 'build' candidate image
         shell: bash
         run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
+      - name: Fixes for git safety checks
+        run: git config --global --add safe.directory '*'
       - name: Test cmake
         run: cmake --version
       - name: Test python
