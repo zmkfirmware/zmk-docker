@@ -88,14 +88,21 @@ ARG ARCHITECTURE
 ARG ZEPHYR_SDK_VERSION
 ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 RUN \
-  export sdk_file_name="zephyr-toolchain-${ARCHITECTURE}-${ZEPHYR_SDK_VERSION}-linux-$(uname -m)-setup.run" \
+  export minimal_sdk_file_name="zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-$(uname -m)_minimal" \
+  && if [ "${ARCHITECTURE}" = "arm" ]; then arch_format="eabi"; else arch_format="elf"; fi \
+  && if [ "${ARCHITECTURE#xtensa}" = "${ARCHITECTURE}" ]; then arch_sep="-"; else arch_sep="_"; fi \
   && apt-get -y update \
   && apt-get -y install --no-install-recommends \
   wget \
   xz-utils \
-  && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${sdk_file_name}" \
-  && sh ${sdk_file_name} --quiet -- -d ${ZEPHYR_SDK_INSTALL_DIR} \
-  && rm ${sdk_file_name} \
+  && cd ${TMP} \ 
+  && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${minimal_sdk_file_name}.tar.gz" \
+  && tar xvfz ${minimal_sdk_file_name}.tar.gz \
+  && mv zephyr-sdk-${ZEPHYR_SDK_VERSION} /opt/ \
+  && rm ${minimal_sdk_file_name}.tar.gz \
+  && cd /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION} \
+  && ./setup.sh -h -c -t ${ARCHITECTURE}${arch_sep}zephyr-${arch_format} \
+  && cd \
   && apt-get remove -y --purge \
   wget \
   xz-utils \
