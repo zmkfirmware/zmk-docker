@@ -130,7 +130,7 @@ jobs:
           echo ::set-output name=major-minor-branch-upstream::docker.io/${NSU}/${REPOSITORY}:${MAJOR_MINOR_BRANCH}
       - name: Set up cache
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         env:
           cache-name: dev-generic
         with:
@@ -282,7 +282,7 @@ jobs:
           echo ::set-output name=list::${LIST}
       - name: Set up dev-generic cache
         id: dev-generic-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         env:
           cache-name: dev-generic
         with:
@@ -341,7 +341,7 @@ jobs:
           repository: ${{ env.zmk-repository }}
           ref: ${{ env.zmk-ref }}
       - name: Cache Zephyr modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         env:
           cache-name: zephyr-modules
         with:
