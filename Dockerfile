@@ -45,7 +45,7 @@ RUN \
   apt-get -y update \
   && apt-get -y install --no-install-recommends \
   curl \
-  && curl -sL https://deb.nodesource.com/setup_16.x | bash - \
+  && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
   && apt-get -y update \
   && apt-get -y install --no-install-recommends \
   clang-format \
