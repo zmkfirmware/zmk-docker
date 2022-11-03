@@ -32,22 +32,19 @@ jobs:
     steps:
       - name: Timestamp
         id: timestamp
-        run: echo ::set-output name=timestamp::$(date +%Y%m%d%H%M%S)
+        run: echo "timestamp=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
   architectures:
     runs-on: ubuntu-latest
     outputs:
       json: ${{ steps.import.outputs.json }}
     steps:
+      - name: Install yaml2json
+        run: python3 -m pip install remarshal
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Import from architectures.yml
         id: import
-        shell: python
-        run: |
-          import yaml, json
-          with open('architectures.yml', 'r') as file:
-            architectures = yaml.safe_load(file)
-            print('::set-output name=json::' + json.dumps(architectures))
+        run: echo "json=$(yaml2json architectures.yml | jq -c .)" >> $GITHUB_OUTPUT
   tags:
     needs:
       - timestamp
@@ -81,12 +78,12 @@ jobs:
           MAJOR_MINOR=${MAJOR}.${MINOR}
           MAJOR_MINOR_BRANCH=${MAJOR_MINOR}-branch
 
-          echo ::set-output name=branch::${BRANCH}
-          echo ::set-output name=base::${BASE}
-          echo ::set-output name=candidate::${CANDIDATE}
-          echo ::set-output name=versions::${VERSIONS}
-          echo ::set-output name=major-minor::${MAJOR_MINOR}
-          echo ::set-output name=major-minor-branch::${MAJOR_MINOR_BRANCH}
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+          echo "base=${BASE}" >> $GITHUB_OUTPUT
+          echo "candidate=${CANDIDATE}" >> $GITHUB_OUTPUT
+          echo "versions=${VERSIONS}" >> $GITHUB_OUTPUT
+          echo "major-minor=${MAJOR_MINOR}" >> $GITHUB_OUTPUT
+          echo "major-minor-branch=${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
   dev-generic:
     needs:
       - timestamp
@@ -119,15 +116,15 @@ jobs:
           BASE: ${{ needs.tags.outputs.base }}
           MAJOR_MINOR_BRANCH: ${{ needs.tags.outputs.major-minor-branch }}
         run: |
-          echo ::set-output name=local::/tmp/.buildx/dev-generic
-          echo ::set-output name=local-new::/tmp/.buildx/dev-generic-new
-          echo ::set-output name=branch::docker.io/${NS}/${REPOSITORY}:${BRANCH}
+          echo "local=/tmp/.buildx/dev-generic" >> $GITHUB_OUTPUT
+          echo "local-new=/tmp/.buildx/dev-generic-new" >> $GITHUB_OUTPUT
+          echo "branch=docker.io/${NS}/${REPOSITORY}:${BRANCH}" >> $GITHUB_OUTPUT
           if [ ! -z "$BASE" ]; then
-            echo ::set-output name=base::docker.io/${NS}/${REPOSITORY}:${BASE}
+            echo "base=docker.io/${NS}/${REPOSITORY}:${BASE}" >> $GITHUB_OUTPUT
           fi
-          echo ::set-output name=major-minor-branch::docker.io/${NS}/${REPOSITORY}:${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=branch-upstream::docker.io/${NSU}/${REPOSITORY}:${BRANCH}
-          echo ::set-output name=major-minor-branch-upstream::docker.io/${NSU}/${REPOSITORY}:${MAJOR_MINOR_BRANCH}
+          echo "major-minor-branch=docker.io/${NS}/${REPOSITORY}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
+          echo "branch-upstream=docker.io/${NSU}/${REPOSITORY}:${BRANCH}" >> $GITHUB_OUTPUT
+          echo "major-minor-branch-upstream=docker.io/${NSU}/${REPOSITORY}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
       - name: Set up cache
         id: cache
         uses: actions/cache@v3
@@ -219,8 +216,8 @@ jobs:
         id: repositories
         shell: bash
         run: |
-          echo ::set-output name=build::zmk-build-${{ matrix.architecture }}
-          echo ::set-output name=dev::zmk-dev-${{ matrix.architecture }}
+          echo "build=zmk-build-${{ matrix.architecture }}" >> $GITHUB_OUTPUT
+          echo "dev=zmk-dev-${{ matrix.architecture }}" >> $GITHUB_OUTPUT
       - name: Define paths
         id: paths
         shell: bash
@@ -234,23 +231,23 @@ jobs:
           BASE: ${{ needs.tags.outputs.base }}
           MAJOR_MINOR_BRANCH: ${{ needs.tags.outputs.major-minor-branch }}
         run: |
-          echo ::set-output name=dev-generic::/tmp/.buildx/dev-generic
-          echo ::set-output name=build-candidate::docker.io/${NS}/${BUILD}:${CANDIDATE}
-          echo ::set-output name=build-branch::docker.io/${NS}/${BUILD}:${BRANCH}
+          echo "dev-generic=/tmp/.buildx/dev-generic" >> $GITHUB_OUTPUT
+          echo "build-candidate=docker.io/${NS}/${BUILD}:${CANDIDATE}" >> $GITHUB_OUTPUT
+          echo "build-branch=docker.io/${NS}/${BUILD}:${BRANCH}" >> $GITHUB_OUTPUT
           if [ ! -z "$BASE" ]; then
-            echo ::set-output name=build-base::docker.io/${NS}/${BUILD}:${BASE}
+            echo "build-base=docker.io/${NS}/${BUILD}:${BASE}" >> $GITHUB_OUTPUT
           fi
-          echo ::set-output name=build-major-minor-branch::docker.io/${NS}/${BUILD}:${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=build-branch-upstream::docker.io/${NSU}/${BUILD}:${BRANCH}
-          echo ::set-output name=build-major-minor-branch-upstream::docker.io/${NSU}/${BUILD}:${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=dev-candidate::docker.io/${NS}/${DEV}:${CANDIDATE}
-          echo ::set-output name=dev-branch::docker.io/${NS}/${DEV}:${BRANCH}
+          echo "build-major-minor-branch=docker.io/${NS}/${BUILD}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
+          echo "build-branch-upstream=docker.io/${NSU}/${BUILD}:${BRANCH}" >> $GITHUB_OUTPUT
+          echo "build-major-minor-branch-upstream=docker.io/${NSU}/${BUILD}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
+          echo "dev-candidate=docker.io/${NS}/${DEV}:${CANDIDATE}" >> $GITHUB_OUTPUT
+          echo "dev-branch=docker.io/${NS}/${DEV}:${BRANCH}" >> $GITHUB_OUTPUT
           if [ ! -z "$BASE" ]; then
-            echo ::set-output name=dev-base::docker.io/${NS}/${DEV}:${BASE}
+            echo "dev-base=docker.io/${NS}/${DEV}:${BASE}" >> $GITHUB_OUTPUT
           fi
-          echo ::set-output name=dev-major-minor-branch::docker.io/${NS}/${DEV}:${MAJOR_MINOR_BRANCH}
-          echo ::set-output name=dev-branch-upstream::docker.io/${NSU}/${DEV}:${BRANCH}
-          echo ::set-output name=dev-major-minor-branch-upstream::docker.io/${NSU}/${DEV}:${MAJOR_MINOR_BRANCH}
+          echo "dev-major-minor-branch=docker.io/${NS}/${DEV}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
+          echo "dev-branch-upstream=docker.io/${NSU}/${DEV}:${BRANCH}" >> $GITHUB_OUTPUT
+          echo "dev-major-minor-branch-upstream=docker.io/${NSU}/${DEV}:${MAJOR_MINOR_BRANCH}" >> $GITHUB_OUTPUT
       - name: Define build-args
         id: build-args
         shell: bash
@@ -260,12 +257,11 @@ jobs:
             ARCHITECTURE=${{ matrix.architecture }}
             ZEPHYR_SDK_VERSION=${{ env.zephyr-sdk-version }}
           "
-          # Escapes %, \n and \r
-          # See: https://github.community/t/set-output-truncates-multiline-strings/16852
-          LIST="${LIST//'%'/'%25'}"
-          LIST="${LIST//$'\n'/'%0A'}"
-          LIST="${LIST//$'\r'/'%0D'}"
-          echo ::set-output name=list::${LIST}
+
+          delimiter="$(openssl rand -hex 8)"
+          echo "list<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "${LIST}" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
       - name: Define labels
         id: labels
         shell: bash
@@ -274,12 +270,11 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           "
-          # Escapes %, \n and \r
-          # See: https://github.community/t/set-output-truncates-multiline-strings/16852
-          LIST="${LIST//'%'/'%25'}"
-          LIST="${LIST//$'\n'/'%0A'}"
-          LIST="${LIST//$'\r'/'%0D'}"
-          echo ::set-output name=list::${LIST}
+          delimiter="$(openssl rand -hex 8)"
+          
+          echo "list<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "${LIST}" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
       - name: Set up dev-generic cache
         id: dev-generic-cache
         uses: actions/cache@v3
@@ -336,7 +331,7 @@ jobs:
           cache-to: type=inline
           load: true
       - name: Checkout ZMK
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ env.zmk-repository }}
           ref: ${{ env.zmk-ref }}
@@ -514,28 +509,28 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           PATTERN="^(.+?)-((([0-9]{4})(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01]))(([01]?[0-9]|2[0-3])([0-5][0-9])([0-5][0-9])))-(([0-9]+)\.([0-9]+)\.([0-9]+))-(([0-9]+)\.([0-9]+)\.([0-9]+))-([0-9a-fA-F]+)-([0-9]+)$"
           if [[ "${TAG}" =~ $PATTERN ]]; then
-            echo ::set-output name=tag::${TAG}
-            echo ::set-output name=branch::${BASH_REMATCH[1]}
-            echo ::set-output name=datetime::${BASH_REMATCH[2]}
-            echo ::set-output name=date::${BASH_REMATCH[3]}
-            echo ::set-output name=year::${BASH_REMATCH[4]}
-            echo ::set-output name=month::${BASH_REMATCH[5]}
-            echo ::set-output name=day::${BASH_REMATCH[6]}
-            echo ::set-output name=time::${BASH_REMATCH[7]}
-            echo ::set-output name=hour::${BASH_REMATCH[8]}
-            echo ::set-output name=minute::${BASH_REMATCH[9]}
-            echo ::set-output name=second::${BASH_REMATCH[10]}
-            echo ::set-output name=zephyr-version::${BASH_REMATCH[11]}
-            echo ::set-output name=zephyr-version-major::${BASH_REMATCH[12]}
-            echo ::set-output name=zephyr-version-minor::${BASH_REMATCH[13]}
-            echo ::set-output name=zephyr-version-patch::${BASH_REMATCH[14]}
-            echo ::set-output name=zephyr-sdk-version::${BASH_REMATCH[15]}
-            echo ::set-output name=zephyr-sdk-version-major::${BASH_REMATCH[16]}
-            echo ::set-output name=zephyr-sdk-version-minor::${BASH_REMATCH[17]}
-            echo ::set-output name=zephyr-sdk-version-patch::${BASH_REMATCH[18]}
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "branch=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "datetime=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            echo "date=${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+            echo "year=${BASH_REMATCH[4]}" >> $GITHUB_OUTPUT
+            echo "month=${BASH_REMATCH[5]}" >> $GITHUB_OUTPUT
+            echo "day=${BASH_REMATCH[6]}" >> $GITHUB_OUTPUT
+            echo "time=${BASH_REMATCH[7]}" >> $GITHUB_OUTPUT
+            echo "hour=${BASH_REMATCH[8]}" >> $GITHUB_OUTPUT
+            echo "minute=${BASH_REMATCH[9]}" >> $GITHUB_OUTPUT
+            echo "second=${BASH_REMATCH[10]}" >> $GITHUB_OUTPUT
+            echo "zephyr-version=${BASH_REMATCH[11]}" >> $GITHUB_OUTPUT
+            echo "zephyr-version-major=${BASH_REMATCH[12]}" >> $GITHUB_OUTPUT
+            echo "zephyr-version-minor=${BASH_REMATCH[13]}" >> $GITHUB_OUTPUT
+            echo "zephyr-version-patch=${BASH_REMATCH[14]}" >> $GITHUB_OUTPUT
+            echo "zephyr-sdk-version=${BASH_REMATCH[15]}" >> $GITHUB_OUTPUT
+            echo "zephyr-sdk-version-major=${BASH_REMATCH[16]}" >> $GITHUB_OUTPUT
+            echo "zephyr-sdk-version-minor=${BASH_REMATCH[17]}" >> $GITHUB_OUTPUT
+            echo "zephyr-sdk-version-patch=${BASH_REMATCH[18]}" >> $GITHUB_OUTPUT
             SHA=${BASH_REMATCH[19]}
-            echo ::set-output name=sha::${SHA}
-            echo ::set-output name=run-id::${BASH_REMATCH[20]}
+            echo "sha=${SHA}" >> $GITHUB_OUTPUT
+            echo "run-id=${BASH_REMATCH[20]}" >> $GITHUB_OUTPUT
 
             if [[ "${{ github.sha }}" != ${SHA}* ]]; then
               echo "Hashes do not match!"
@@ -599,7 +594,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Tag
         env:
           TAG: ${{ needs.tags.outputs.major-minor }}
@@ -619,8 +614,8 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           PATTERN="^(.+?)-stable$"
           if [[ "${TAG}" =~ $PATTERN ]]; then
-            echo ::set-output name=tag::${TAG}
-            echo ::set-output name=stable-tag::${BASH_REMATCH[1]}
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "stable-tag=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           else
             echo "Tag not recognised, ignoring ..."
           fi
@@ -671,7 +666,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ needs.stable-release-trigger.outputs.stable-tag }}
       - name: Tag
