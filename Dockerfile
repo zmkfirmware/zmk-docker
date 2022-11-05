@@ -48,6 +48,7 @@ RUN \
   && apt-get -y update \
   && apt-get -y install --no-install-recommends \
   clang-format \
+  dfu-util \
   g++-multilib \
   gdb \
   gpg \
