@@ -23,6 +23,7 @@ RUN \
   python3-pip \
   python3-setuptools \
   python3-wheel \
+  ssh \
   && pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-base.txt \
   && pip3 install cmake \
@@ -65,7 +66,6 @@ RUN \
   python3-tk \
   python3-wheel \
   socat \
-  ssh \
   tio \
   wget \
   xz-utils \
