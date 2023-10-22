@@ -26,7 +26,7 @@ RUN \
   ssh \
   && pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-base.txt \
-  && pip3 install cmake \
+  && pip3 install cmake pythonsed pytest pytest-xdist \
   && apt-get remove -y --purge \
   python3-dev \
   python3-pip \
@@ -74,6 +74,7 @@ RUN \
   && pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-build-test.txt \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-run-test.txt \
+  pythonsed pytest pytest-xdist \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
