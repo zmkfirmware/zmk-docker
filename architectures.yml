@@ -9,10 +9,10 @@
 - x86_64
 - xtensa-espressif_esp32
 - xtensa-espressif_esp32s2
-- xtensa-intel_apl_adsp
-- xtensa-intel_bdw_adsp
-- xtensa-intel_byt_adsp
-- xtensa-intel_s1000
+- xtensa-espressif_esp32s3
+- xtensa-intel_tgl_adsp
+- xtensa-intel_ace15_mtpm
+- xtensa-mtk_mt8195_adsp
 - xtensa-nxp_imx8m_adsp
 - xtensa-nxp_imx_adsp
 - xtensa-sample_controller

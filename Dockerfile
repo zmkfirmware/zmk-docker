@@ -98,10 +98,10 @@ RUN \
   wget \
   xz-utils \
   && cd ${TMP} \ 
-  && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${minimal_sdk_file_name}.tar.gz" \
-  && tar xvfz ${minimal_sdk_file_name}.tar.gz \
+  && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${minimal_sdk_file_name}.tar.xz" \
+  && tar xvfJ ${minimal_sdk_file_name}.tar.xz \
   && mv zephyr-sdk-${ZEPHYR_SDK_VERSION} /opt/ \
-  && rm ${minimal_sdk_file_name}.tar.gz \
+  && rm ${minimal_sdk_file_name}.tar.xz \
   && cd /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION} \
   && ./setup.sh -h -c -t ${ARCHITECTURE}${arch_sep}zephyr-${arch_format} \
   && cd \
