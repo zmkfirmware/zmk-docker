@@ -185,9 +185,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       docker-args: --rm --workdir /github/workspace -v /var/run/docker.sock:/var/run/docker.sock -v /home/runner/work/_temp:/home/runner/work/_temp -v /home/runner/work/_temp/_github_home:/github/home -v /home/runner/work/_temp/_github_workflow:/github/workflow -v /home/runner/work/_temp/_runner_file_commands:/github/file_commands -v ${{ github.workspace }}:/github/workspace
+      container-id: ${{ github.run_id }}_${{ github.run_number}}
     defaults:
       run:
-        shell: /usr/bin/docker exec candidate /bin/bash {0}
+        shell: /usr/bin/docker exec ${{ env.container-id }} /bin/bash {0}
     strategy:
       fail-fast: false
       matrix: 
@@ -350,7 +351,7 @@ jobs:
             ${{ runner.os }}/${{ env.cache-name }}/
       - name: Create and run container from 'build' candidate image
         shell: bash
-        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
+        run: docker run -d -it --name ${{ env.container-id }} ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
       - name: Fixes for git safety checks
         run: git config --global --add safe.directory '*'
       - name: Test cmake
@@ -385,10 +386,10 @@ jobs:
         run: west build -t clean
       - name: Stop container
         shell: bash
-        run: docker stop candidate
+        run: docker stop ${{ env.container-id }}; sleep 5
       - name: Create and run container from 'dev' candidate image
         shell: bash
-        run: docker run -d -it --name candidate ${{ env.docker-args }} ${{ steps.paths.outputs.dev-candidate }}
+        run: docker run -d -it --name ${{ env.container-id }} ${{ env.docker-args }} ${{ steps.paths.outputs.dev-candidate }}
       - name: Test clang-format
         run: clang-format --version
       - name: Test node
@@ -401,17 +402,16 @@ jobs:
         run: cd docs && npm run prettier:check
       - name: Test docs start (webpack-dev-server)
         run: cd docs && timeout -s SIGINT 60 npm run start &
-      - run: sleep 20
       - name: Test docs wget (webpack-dev-server)
-        run: wget http://localhost:3000
-      - run: sleep 10
+        id: wget-webpack-dev-server
+        run: wget --waitretry=60 http://localhost:3000
+      - run: sleep 60
       - name: Test docs build (webpack)
         run: cd docs && npm run build
       - name: Test docs serve (webpack)
-        run: cd docs && timeout -s SIGINT 10 npm run serve &
-      - run: sleep 5
+        run: cd docs && timeout -s SIGINT 30 npm run serve &
       - name: Test docs wget (webpack)
-        run: wget http://localhost:3000
+        run: wget --waitretry=30 http://localhost:3000
       - name: Test less
         run: less --version
       - name: Test PAGER
@@ -429,7 +429,8 @@ jobs:
         run: socat -V
       - name: Stop container
         shell: bash
-        run: docker stop candidate
+        run: docker stop ${{ env.container-id }}
+        if: ${{ always() }}
       - name: Build and push 'build' candidate image (x86_64 and arm64)
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
         uses: docker/build-push-action@v3
