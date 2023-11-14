@@ -1,4 +1,4 @@
-FROM ubuntu:focal-20220113 AS common
+FROM ubuntu:focal-20231003 AS common
 
 CMD ["/bin/bash"]
 
