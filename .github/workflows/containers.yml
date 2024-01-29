@@ -140,7 +140,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build to local cache
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: dev-generic
           platforms: linux/amd64,linux/arm64
@@ -157,7 +157,7 @@ jobs:
           cache-to: type=local,dest=${{ steps.paths.outputs.local-new }},mode=max
       - name: Push to registry cache
         if: ${{ env.docker-hub-credentials == 'true' }}
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: dev-generic
           platforms: linux/amd64,linux/arm64
@@ -289,7 +289,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build and load 'build' candidate image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: build
           build-args: |
@@ -310,7 +310,7 @@ jobs:
           cache-to: type=inline
           load: true
       - name: Build and load 'dev' candidate image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: dev
           build-args: |
@@ -433,7 +433,7 @@ jobs:
         if: ${{ always() }}
       - name: Build and push 'build' candidate image (x86_64 and arm64)
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: build
           platforms: linux/amd64,linux/arm64
@@ -456,7 +456,7 @@ jobs:
           push: true
       - name: Build and push 'dev' candidate image (x86_64 + arm64)
         if: ${{ steps.docker-hub-login.outcome == 'success' }}
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           target: dev
           platforms: linux/amd64,linux/arm64
