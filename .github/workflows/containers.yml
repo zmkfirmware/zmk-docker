@@ -136,7 +136,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}/${{ env.cache-name }}/${{ github.run_id }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build to local cache
@@ -285,7 +285,7 @@ jobs:
           path: ${{ steps.paths.outputs.dev-generic }}
           key: ${{ runner.os }}/${{ env.cache-name }}/${{ github.run_id }}/${{ needs.timestamp.outputs.timestamp }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build and load 'build' candidate image
