@@ -51,6 +51,7 @@ RUN \
   && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
   && apt-get -y update \
   && apt-get -y install --no-install-recommends \
+  build-essential \
   clang-format \
   gdb \
   gpg \
@@ -97,7 +98,7 @@ RUN \
   && apt-get -y install --no-install-recommends \
   wget \
   xz-utils \
-  && cd ${TMP} \ 
+  && cd ${TMP} \
   && wget -q "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/${minimal_sdk_file_name}.tar.xz" \
   && tar xvfJ ${minimal_sdk_file_name}.tar.xz \
   && mv zephyr-sdk-${ZEPHYR_SDK_VERSION} /opt/ \
