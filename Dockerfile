@@ -1,4 +1,4 @@
-FROM ubuntu:noble-20240605 AS common
+FROM ubuntu:noble-20250415.1 AS common
 
 CMD ["/bin/bash"]
 
@@ -28,7 +28,7 @@ RUN \
   ssh \
   && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-base.txt \
-  && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install cmake protobuf~=4.25 grpcio-tools \
+  && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install cmake protobuf~=5.29 grpcio-tools \
   && apt-get remove -y --purge \
   g++ \
   python3-dev \
