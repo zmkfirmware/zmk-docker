@@ -1,4 +1,4 @@
-FROM ubuntu:noble-20250415.1 AS common
+FROM ubuntu:noble-20250925 AS common
 
 CMD ["/bin/bash"]
 
