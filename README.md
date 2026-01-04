@@ -3,9 +3,11 @@ Lightweight Docker images for [ZMK][zmk].
 ### Platforms
 
 #### Tested
+
 - `arm`
 
 #### Not Tested
+
 - `arc`
 - `arm64`
 - `mips`
@@ -22,6 +24,24 @@ Lightweight Docker images for [ZMK][zmk].
 - `xtensa_sample_controller`
 
 ### Images
+
+#### Build arguments
+
+The building of the image requires the following build arguments:
+
+- `ZEPHYR_VERSION`: version of [Zephyr][zephyr] to install (e.g. `4.1.0`)
+- `ARCHITECTURE`: target architecture (e.g. `arm`, `x86_64`, etc.)
+- `ZEPHYR_SDK_VERSION`: version of [Zephyr SDK][Zephyr SDK] to install (e.g. `0.17.4`)
+
+Example:
+
+```shell
+docker build \
+    --build-arg ZEPHYR_VERSION=4.1.0 \
+    --build-arg ARCHITECTURE=x86_64 \
+    --build-arg ZEPHYR_SDK_VERSION=0.17.4 \
+    -t zmkfirmware/zmk-docker .
+```
 
 #### build
 
@@ -47,3 +67,4 @@ For _developing_ [ZMK][zmk] (firmware and documentation).
 [ubuntu]: https://hub.docker.com/_/ubuntu "Ubuntu"
 [zephyr]: https://github.com/zephyrproject-rtos/zephyr "Zephyr"
 [zmk]: https://github.com/zmkfirmware/zmk "ZMK"
+[zephyr sdk]: https://github.com/zephyrproject-rtos/sdk-ng/tags "Zephyr SDK"

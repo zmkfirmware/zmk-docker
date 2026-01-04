@@ -90,7 +90,6 @@ FROM common AS build
 
 ARG ARCHITECTURE
 ARG ZEPHYR_SDK_VERSION
-ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 RUN \
   export minimal_sdk_file_name="zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-$(uname -m)_minimal" \
   && if [ "${ARCHITECTURE}" = "arm" ]; then arch_format="eabi"; else arch_format="elf"; fi \
@@ -116,5 +115,7 @@ RUN \
 #------------------------------------------------------------------------------
 
 FROM dev-generic AS dev
+ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
 
 COPY --from=build ${ZEPHYR_SDK_INSTALL_DIR} ${ZEPHYR_SDK_INSTALL_DIR}
+
