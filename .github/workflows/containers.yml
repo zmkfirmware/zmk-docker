@@ -1,8 +1,8 @@
 name: Containers
 
 env:
-  zephyr-version: 4.1.0
-  zephyr-sdk-version: 0.16.9
+  zephyr-version: 4.4.0
+  zephyr-sdk-version: 1.0.1
   sha-abbrev-length: 12
   no-cache: ${{ secrets.NO_CACHE != null || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
   ignore-actions-cache: ${{ secrets.IGNORE_ACTIONS_CACHE != null }}
@@ -353,7 +353,9 @@ jobs:
         shell: bash
         run: docker run -d -it --name ${{ env.container-id }} ${{ env.docker-args }} ${{ steps.paths.outputs.build-candidate }}
       - name: Fixes for git safety checks
-        run: git config --global --add safe.directory '*'
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --add safe.directory /github/workspace
       - name: Test cmake
         run: cmake --version
       - name: Test python
@@ -401,7 +403,9 @@ jobs:
       - name: Test docs prettier check
         run: cd docs && npm run prettier:check
       - name: Test docs start (webpack-dev-server)
-        run: cd docs && (timeout -s SIGINT 5m npm start &) && sleep 90
+        run: |
+          git config --global --add safe.directory /github/workspace
+          cd docs && (timeout -s SIGINT 5m npm start &) && sleep 90
       - name: Test docs wget (webpack-dev-server)
         id: wget-webpack-dev-server
         run: wget --retry-connrefused --waitretry=60 http://localhost:3000
@@ -424,7 +428,7 @@ jobs:
         run: gdb --version
       - name: Test arm-zephyr-eabi-gdb
         if: ${{ matrix.architecture == 'arm' }}
-        run: /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb --version
+        run: /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb --version
       - name: Test tio
         run: tio --version
       - name: Test socat
