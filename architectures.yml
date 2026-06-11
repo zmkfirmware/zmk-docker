@@ -1,10 +1,11 @@
+- aarch64
 - arc
 - arc64
 - arm
-- aarch64
+- microblazeel
 - mips
-- nios2
 - riscv64
+- rx
 - sparc
 - x86_64
 - xtensa-espressif_esp32
