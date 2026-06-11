@@ -12,8 +12,8 @@ env:
   docker-hub-namespace: ${{ secrets.DOCKER_HUB_NAMESPACE || github.repository_owner }}
   docker-hub-namespace-upstream: ${{ secrets.DOCKER_HUB_NAMESPACE_UPSTREAM || 'zmkfirmware' }}
   ghcr-namespace: ${{ github.repository_owner }}
-  zmk-repository: ${{ secrets.ZMK_REPOSITORY || 'zmkfirmware/zmk' }}
-  zmk-ref: ${{ secrets.ZMK_REF || 'main' }}
+  zmk-repository: ${{ secrets.ZMK_REPOSITORY || 'petejohanson/zmk' }}
+  zmk-ref: ${{ secrets.ZMK_REF || 'core/move-to-zephyr-4-4-0' }}
 
 on:
   push:
