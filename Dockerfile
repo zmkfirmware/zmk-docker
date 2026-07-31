@@ -26,9 +26,9 @@ RUN \
   python3-setuptools \
   python3-wheel \
   ssh \
-  && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install \
+  && PIP_BREAK_SYSTEM_PACKAGES=1 PIP_NO_CACHE_DIR=1 pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-base.txt \
-  && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install cmake==3.31.6 protobuf~=5.29 grpcio-tools \
+  && PIP_BREAK_SYSTEM_PACKAGES=1 PIP_NO_CACHE_DIR=1 pip3 install cmake==3.31.6 protobuf~=5.29 grpcio-tools \
   && apt-get remove -y --purge \
   g++ \
   python3-dev \
@@ -73,7 +73,7 @@ RUN \
   tio \
   wget \
   xz-utils \
-  && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install \
+  && PIP_BREAK_SYSTEM_PACKAGES=1 PIP_NO_CACHE_DIR=1 pip3 install \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-build-test.txt \
   -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/v${ZEPHYR_VERSION}/scripts/requirements-run-test.txt \
   && apt-get clean \
@@ -106,6 +106,7 @@ RUN \
   && rm ${minimal_sdk_file_name}.tar.xz \
   && cd /opt/zephyr-sdk-${ZEPHYR_SDK_VERSION} \
   && ./setup.sh -h -c -t ${ARCHITECTURE}${arch_sep}zephyr-${arch_format} \
+  && rm -f zephyr-sdk-*-hosttools-standalone-*.sh \
   && cd \
   && apt-get remove -y --purge \
   wget \
